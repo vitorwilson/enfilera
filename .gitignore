@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Real config & secrets (the example file IS committed; the real one is not)
+config/config.toml
+config/*.env
+.env
+
+# Runtime database (dynamic state lives here, never in git)
+*.db
+*.sqlite
+*.sqlite3
+
+# Audit artifact produced in CI
+requirements-audit.txt
+
+# OS / editor
+.DS_Store

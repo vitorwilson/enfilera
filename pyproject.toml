@@ -1,0 +1,50 @@
+[project]
+name = "enfilera"
+dynamic = ["version"]
+description = "Telegram bot that crowdsources university-cafeteria queue wait times."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Vitor Wilson", email = "105898142+vitorwilson@users.noreply.github.com" }]
+keywords = ["telegram", "bot", "cafeteria", "queue", "crowdsourcing"]
+dependencies = [
+    "python-telegram-bot>=21,<23",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "ruff>=0.6",
+    "black>=24",
+    "pip-audit>=2.7",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+# Single source of truth for the version: the package __init__.
+path = "src/enfilera/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/enfilera"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "C90"]
+
+[tool.ruff.lint.mccabe]
+# the project conventions: CI rejects high cyclomatic complexity.
+max-complexity = 10
+
+[tool.black]
+line-length = 88
+target-version = ["py311"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

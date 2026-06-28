@@ -1,0 +1,84 @@
+# Enfilera configuration — STATIC layer.
+#
+# A forker copies this file to `config/config.toml` and edits it once for
+# their cafeteria. Everything cafeteria-specific lives here; nothing is
+# hardcoded in the source.
+#
+# What does NOT belong here:
+#   - The bot token  -> comes from the environment (see [bot].token_env).
+#   - Closures / halt -> DYNAMIC state, set at runtime via admin commands and
+#     stored in the database, never in this file.
+#
+# All values below are FAKE placeholders. Replace them.
+
+[bot]
+# Name of the environment variable that holds the Telegram bot token.
+# The token itself is NEVER committed.
+token_env = "ENFILERA_BOT_TOKEN"
+# Telegram user IDs allowed to run admin commands (halt/resume, closures).
+admin_ids = [11111111, 22222222]
+
+[restaurant]
+name = "Bandejão Central"
+# IANA timezone. All "open right now?" and one-per-period decisions use
+# server time in this zone, never the user's device clock.
+timezone = "America/Sao_Paulo"
+# Geofence: a timer can only START within `radius_m` metres of this point.
+# The user's location is checked against it and then DISCARDED — never stored.
+latitude = -23.559616
+longitude = -46.731386
+radius_m = 50
+
+[schedule]
+# Days the cafeteria operates, ISO weekday (1 = Monday … 7 = Sunday).
+operating_days = [1, 2, 3, 4, 5]
+# Block size, in minutes, for the (line, weekday, block) baseline buckets.
+block_minutes = 60
+
+# Operating periods within a day. `id` is stable and is what a closure targets
+# when it shuts only one period. Times are local "HH:MM" (24h).
+[[schedule.periods]]
+id = "lunch"
+start = "10:30"
+end = "14:30"
+
+[[schedule.periods]]
+id = "dinner"
+start = "17:00"
+end = "20:00"
+
+# The lines this cafeteria has. `id` is stable (used in the DB); `label` is
+# what users see. Add or remove entries to match your installation.
+[[lines]]
+id = "card"
+label = "Cartão (bandejão)"
+
+[[lines]]
+id = "bandejinho"
+label = "Bandejinho"
+
+[[lines]]
+id = "pix"
+label = "Pix"
+
+[estimation]
+# Minimum honest samples in today's block before its live estimate is trusted.
+# Below this: previous block today -> historical seed -> default_seed_minutes.
+min_samples = 3
+# Value shown for any (line, block) before any data exists, in minutes. Also
+# the fresh-fork bootstrap: a brand-new install shows this everywhere.
+default_seed_minutes = 1
+# Physical clamp band for a single transit sample, in minutes. Samples below
+# the lower bound are discarded; samples above the upper bound are rejected.
+# A real lunch-rush queue can genuinely take ~30 min, so the ceiling sits
+# well above that — it is the highest-leverage poison defense after the
+# geofence, not a cap on normal waits.
+clamp_min_minutes = 1
+clamp_max_minutes = 60
+# Relative outlier rejection width: keep samples within k·MAD of the
+# HISTORICAL baseline for that (line, weekday, block).
+mad_k = 3.0
+
+[retention]
+# The pruning job drops raw samples older than this many days.
+sample_days = 30
