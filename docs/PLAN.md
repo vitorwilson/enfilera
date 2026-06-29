@@ -192,19 +192,19 @@ This is where most test lines live.
 SQLite (a single file — perfect for one Pi, trivial to fork/backup). Wrapped
 behind a thin project-owned interface; dependencies injected.
 
-- [ ] Schema: raw samples (queue, weekday, block, value, server-timestamp);
+- [x] Schema: raw samples (queue, weekday, block, value, server-timestamp);
       per-user last-submission-per-period; **closure records**
       (`date`, nullable `period`, nullable `reason`); halt flag. Named
       fake/in-memory DB for tests.
-- [ ] Write a validated sample; read samples for a (queue, weekday, block)
+- [x] Write a validated sample; read samples for a (queue, weekday, block)
       window.
-- [ ] Record & query "user already submitted this period".
-- [ ] Closures: insert (a range inserts one row per day), **query active for
+- [x] Record & query "user already submitted this period".
+- [x] Closures: insert (a range inserts one row per day), **query active for
       a given date/period**, list upcoming, **delete a specific** one.
       Read/write the halt flag.
-- [ ] **Pruning job:** delete samples older than the retention window, and
+- [x] **Pruning job:** delete samples older than the retention window, and
       drop closure records whose date has passed.
-- [ ] Migrations / first-run schema creation so a fork comes up empty-clean.
+- [x] Migrations / first-run schema creation so a fork comes up empty-clean.
 
 ## Feature 4 — Telegram bot: user flows  *(priority: medium)*
 

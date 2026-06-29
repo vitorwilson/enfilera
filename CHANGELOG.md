@@ -26,3 +26,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   is parsed and validated (minutes → seconds).
 - Shared config-parsing validators reused across the schedule and estimation
   config builders.
+- Persistence layer over a single SQLite file, behind thin per-entity stores
+  with the connection injected: schema migrations via `PRAGMA user_version`
+  (fresh fork comes up empty-clean), raw-sample write + windowed read +
+  retention pruning, the one-submission-per-period record/query, closure
+  declare/range/active/upcoming/revoke + past-closure pruning, and the halt
+  flag. Includes the scheduled pruning job that keeps the database bounded.
