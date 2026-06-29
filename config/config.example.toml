@@ -17,6 +17,14 @@
 token_env = "ENFILERA_BOT_TOKEN"
 # Telegram user IDs allowed to run admin commands (halt/resume, closures).
 admin_ids = [11111111, 22222222]
+# Where "Found a bug?" sends users, and the operator credit link. Point these
+# at your own fork and profile.
+issues_url = "https://github.com/your-username/enfilera/issues"
+author_url = "https://github.com/your-username"
+# Per-user flood protection: at most `flood_max_events` actions per
+# `flood_window_seconds` sliding window; extra actions are ignored.
+flood_max_events = 5
+flood_window_seconds = 10
 
 [restaurant]
 name = "Bandejão Central"
