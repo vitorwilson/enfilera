@@ -71,6 +71,18 @@ def test_reversed_range_is_rejected() -> None:
         parse_closure_args(["2026-07-03..2026-07-01"], TODAY, PERIODS)
 
 
+def test_absurdly_long_range_is_rejected() -> None:
+    # A typo spanning years would write tens of thousands of rows; cap it.
+    with pytest.raises(ValueError, match="longo demais"):
+        parse_closure_args(["2026-01-01..2099-01-01"], TODAY, PERIODS)
+
+
+def test_range_at_the_span_limit_is_accepted() -> None:
+    # 366-day span (367 inclusive days) is the boundary and must still parse.
+    spec = parse_closure_args(["2026-01-01..2027-01-02"], TODAY, PERIODS)
+    assert (spec.end - spec.start).days == 366
+
+
 # --- /reabrir ------------------------------------------------------------
 
 

@@ -52,6 +52,11 @@ That builds the image and starts the service with `docker compose up -d
 --build`. `restart: unless-stopped` brings the bot back after a crash or a host
 reboot, unattended — there is no systemd to configure.
 
+The container runs as a non-root user (UID 1000), which matches the default
+first user on Raspberry Pi OS / Ubuntu, so the bind-mounted `data/` is writable
+out of the box. If your host user has a different UID and the bot can't write
+the database, run `chown -R 1000:1000 data` once.
+
 ### Deploy to a remote host
 
 The simplest, most portable way is to run `bin/deploy` **on** the host that

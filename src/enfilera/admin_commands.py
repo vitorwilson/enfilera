@@ -21,6 +21,10 @@ from datetime import date
 
 _TODAY_TOKEN = "hoje"
 _RANGE_SEP = ".."
+# A closure range stores one row per day; cap the span so a typo like
+# `2026-01-01..2099-01-01` can't write tens of thousands of rows. ~1 year is
+# far beyond any real cafeteria closure.
+_MAX_RANGE_DAYS = 366
 _CLOSE_USAGE = (
     "uso: /fechar <hoje|AAAA-MM-DD|AAAA-MM-DD..AAAA-MM-DD> [período] [motivo]"
 )
@@ -85,6 +89,12 @@ def _parse_date_spec(token: str, today: date) -> tuple[date, date]:
     end = _parse_one_date(end_token, today)
     if end < start:
         raise ValueError(f"intervalo inválido: fim {end} antes do início {start}")
+    span = (end - start).days
+    if span > _MAX_RANGE_DAYS:
+        raise ValueError(
+            f"intervalo longo demais: {span} dias entre {start} e {end} "
+            f"(máx {_MAX_RANGE_DAYS}); verifique as datas"
+        )
     return start, end
 
 

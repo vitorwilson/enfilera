@@ -26,6 +26,14 @@ ENV PATH="/app/.venv/bin:$PATH" \
     ENFILERA_DB=/app/data/enfilera.db
 COPY --from=build /app/.venv /app/.venv
 COPY src ./src
+# Drop root: the bot needs no privileges and exposes no inbound ports. UID 1000
+# matches the default first user on Raspberry Pi OS / Ubuntu, so the
+# bind-mounted ./data is writable out of the box; on a host where your UID
+# differs, `chown -R 1000:1000 data` (see docs/DEPLOY.md).
+RUN useradd --create-home --uid 1000 app \
+    && mkdir -p /app/data \
+    && chown app /app/data
+USER app
 # config/ is bind-mounted at runtime (config.toml) and the token arrives via
 # the compose env_file; data/ is a mounted volume holding the SQLite database,
 # so neither is baked into the image.
