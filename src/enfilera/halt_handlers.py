@@ -16,7 +16,7 @@ from datetime import datetime
 from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
 
-from enfilera.admin_guard import AdminGuard
+from enfilera.admin_guard import AdminGuard, admin_only
 from enfilera.admin_messages import HALTED, RESUMED, admin_status
 from enfilera.halt_flag import HaltFlag
 from enfilera.openness_service import OpennessService
@@ -49,26 +49,23 @@ class HaltControls:
         application.add_handler(CommandHandler(RESUME_COMMAND, self.resume))
         application.add_handler(CommandHandler(STATUS_COMMAND, self.status))
 
+    @admin_only
     async def pause(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """``/pausar`` — halt the bot until an admin resumes it."""
-        if not await self._guard.authorize(update):
-            return
         self._halt.set(True)
         _logger.info("bot halted", extra={"user_id": update.effective_user.id})
         await update.effective_message.reply_text(HALTED)
 
+    @admin_only
     async def resume(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """``/retomar`` — lift the halt and return to normal operation."""
-        if not await self._guard.authorize(update):
-            return
         self._halt.set(False)
         _logger.info("bot resumed", extra={"user_id": update.effective_user.id})
         await update.effective_message.reply_text(RESUMED)
 
+    @admin_only
     async def status(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """``/status`` — report the current open/closed/halt state and why."""
-        if not await self._guard.authorize(update):
-            return
         await update.effective_message.reply_text(
             admin_status(self._openness.status(self._clock()))
         )

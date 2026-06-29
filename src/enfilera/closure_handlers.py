@@ -18,7 +18,7 @@ from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
 
 from enfilera.admin_commands import parse_closure_args, parse_revoke_args
-from enfilera.admin_guard import AdminGuard
+from enfilera.admin_guard import AdminGuard, admin_only
 from enfilera.admin_messages import closure_declared, closure_revoked, closures_list
 from enfilera.closures_store import ClosureStore
 from enfilera.schedule import Schedule
@@ -52,10 +52,9 @@ class ClosureControls:
         application.add_handler(CommandHandler(LIST_COMMAND, self.list_upcoming))
         application.add_handler(CommandHandler(REOPEN_COMMAND, self.revoke))
 
+    @admin_only
     async def declare(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """``/fechar`` — declare a closure for a day, period, or range."""
-        if not await self._guard.authorize(update):
-            return
         try:
             spec = parse_closure_args(context.args, self._today(), self._period_ids)
         except ValueError as exc:
@@ -76,19 +75,17 @@ class ClosureControls:
         )
         await update.effective_message.reply_text(closure_declared(count, spec))
 
+    @admin_only
     async def list_upcoming(
         self, update: Update, context: ContextTypes.DEFAULT_TYPE
     ) -> None:
         """``/fechamentos`` — list upcoming closures, today onward."""
-        if not await self._guard.authorize(update):
-            return
         upcoming = self._closures.upcoming(self._today())
         await update.effective_message.reply_text(closures_list(upcoming))
 
+    @admin_only
     async def revoke(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """``/reabrir`` — remove a specific closure (whole day or one period)."""
-        if not await self._guard.authorize(update):
-            return
         try:
             spec = parse_revoke_args(context.args, self._today(), self._period_ids)
         except ValueError as exc:

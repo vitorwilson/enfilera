@@ -8,7 +8,12 @@ a short refusal and the handler returns without touching any dynamic state.
 
 from __future__ import annotations
 
+import functools
+from collections.abc import Awaitable, Callable
+from typing import Protocol
+
 from telegram import Update
+from telegram.ext import ContextTypes
 
 DENIED = "Comando restrito ao operador."
 
@@ -40,3 +45,30 @@ class AdminGuard:
             return True
         await update.effective_message.reply_text(DENIED)
         return False
+
+
+class _Guarded(Protocol):
+    """A handler that holds an :class:`AdminGuard` to authorize through."""
+
+    _guard: AdminGuard
+
+
+_AdminHandler = Callable[[_Guarded, Update, ContextTypes.DEFAULT_TYPE], Awaitable[None]]
+
+
+def admin_only(method: _AdminHandler) -> _AdminHandler:
+    """Run a handler method only for an authorized admin, else reply the refusal.
+
+    Keeps the allowlist check in one place across every operator command: the
+    decorated method body never runs for a non-admin update.
+    """
+
+    @functools.wraps(method)
+    async def guarded(
+        self: _Guarded, update: Update, context: ContextTypes.DEFAULT_TYPE
+    ) -> None:
+        if not await self._guard.authorize(update):
+            return
+        await method(self, update, context)
+
+    return guarded
