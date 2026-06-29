@@ -10,29 +10,14 @@ import sqlite3
 from datetime import datetime, time
 from zoneinfo import ZoneInfo
 
+from schedules import make_schedule as _schedule
+
 from enfilera.estimate_service import EstimationService
 from enfilera.estimation_config import EstimationConfig
 from enfilera.samples_store import SampleStore
-from enfilera.schedule import build_schedule
 
 SP = ZoneInfo("America/Sao_Paulo")
 RETENTION = 30
-
-
-def _schedule():
-    return build_schedule(
-        {
-            "restaurant": {"timezone": "America/Sao_Paulo"},
-            "schedule": {
-                "operating_days": [1, 2, 3, 4, 5],
-                "block_minutes": 60,
-                "periods": [
-                    {"id": "lunch", "start": "10:30", "end": "14:30"},
-                    {"id": "dinner", "start": "17:00", "end": "20:00"},
-                ],
-            },
-        }
-    )
 
 
 def _config() -> EstimationConfig:

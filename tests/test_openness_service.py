@@ -11,30 +11,15 @@ import sqlite3
 from datetime import date, datetime
 from zoneinfo import ZoneInfo
 
+from schedules import make_schedule as _schedule
+
 from enfilera.closures import Closure
 from enfilera.closures_store import ClosureStore
 from enfilera.halt_flag import HaltFlag
 from enfilera.openness import ClosedReason, ClosedStatus, OpenStatus
 from enfilera.openness_service import OpennessService
-from enfilera.schedule import build_schedule
 
 SP = ZoneInfo("America/Sao_Paulo")
-
-
-def _schedule() -> object:
-    return build_schedule(
-        {
-            "restaurant": {"timezone": "America/Sao_Paulo"},
-            "schedule": {
-                "operating_days": [1, 2, 3, 4, 5],
-                "block_minutes": 60,
-                "periods": [
-                    {"id": "lunch", "start": "10:30", "end": "14:30"},
-                    {"id": "dinner", "start": "17:00", "end": "20:00"},
-                ],
-            },
-        }
-    )
 
 
 def _service(conn: sqlite3.Connection) -> OpennessService:

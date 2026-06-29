@@ -16,6 +16,7 @@ from datetime import date, datetime
 from typing import Any
 from zoneinfo import ZoneInfo
 
+from schedules import make_schedule as _schedule
 from telegram.ext import ApplicationBuilder, CommandHandler
 from telegram_fakes import FakeContext, FakeMessage, FakeUpdate, FakeUser
 
@@ -23,7 +24,6 @@ from enfilera.admin_guard import DENIED, AdminGuard
 from enfilera.closure_handlers import ClosureControls
 from enfilera.closures import Closure
 from enfilera.closures_store import ClosureStore
-from enfilera.schedule import build_schedule
 
 SP = ZoneInfo("America/Sao_Paulo")
 ADMIN = 7
@@ -34,22 +34,6 @@ TODAY = date(2026, 6, 29)
 
 def _run(coro: Coroutine[Any, Any, None]) -> None:
     asyncio.run(coro)
-
-
-def _schedule() -> object:
-    return build_schedule(
-        {
-            "restaurant": {"timezone": "America/Sao_Paulo"},
-            "schedule": {
-                "operating_days": [1, 2, 3, 4, 5],
-                "block_minutes": 60,
-                "periods": [
-                    {"id": "lunch", "start": "10:30", "end": "14:30"},
-                    {"id": "dinner", "start": "17:00", "end": "20:00"},
-                ],
-            },
-        }
-    )
 
 
 def _controls(conn: sqlite3.Connection) -> ClosureControls:

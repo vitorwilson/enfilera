@@ -14,6 +14,7 @@ from datetime import date, datetime, time, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
 
+from schedules import make_schedule as _schedule
 from telegram import InlineKeyboardMarkup, ReplyKeyboardMarkup
 from telegram.ext import (
     ApplicationBuilder,
@@ -38,7 +39,6 @@ from enfilera.lines import Line
 from enfilera.openness_service import OpennessService
 from enfilera.preferences_store import LinePreferenceStore
 from enfilera.samples_store import SampleStore
-from enfilera.schedule import build_schedule
 from enfilera.submission_recorder import SubmissionRecorder
 from enfilera.submissions_store import SubmissionStore
 from enfilera.timer_handlers import RegisterTimer
@@ -64,22 +64,6 @@ class Clock:
 
     def __call__(self) -> datetime:
         return self.now
-
-
-def _schedule() -> object:
-    return build_schedule(
-        {
-            "restaurant": {"timezone": "America/Sao_Paulo"},
-            "schedule": {
-                "operating_days": [1, 2, 3, 4, 5],
-                "block_minutes": 60,
-                "periods": [
-                    {"id": "lunch", "start": "10:30", "end": "14:30"},
-                    {"id": "dinner", "start": "17:00", "end": "20:00"},
-                ],
-            },
-        }
-    )
 
 
 def _config() -> EstimationConfig:

@@ -13,6 +13,7 @@ from datetime import UTC, date, datetime, time
 from zoneinfo import ZoneInfo
 
 import pytest
+from schedules import make_schedule as _schedule
 
 from enfilera.closures import Closure
 from enfilera.openness import (
@@ -23,25 +24,9 @@ from enfilera.openness import (
     current_period,
     status_at,
 )
-from enfilera.schedule import Block, build_schedule
+from enfilera.schedule import Block
 
 SP = ZoneInfo("America/Sao_Paulo")
-
-
-def _schedule(timezone: str = "America/Sao_Paulo"):
-    return build_schedule(
-        {
-            "restaurant": {"timezone": timezone},
-            "schedule": {
-                "operating_days": [1, 2, 3, 4, 5],
-                "block_minutes": 60,
-                "periods": [
-                    {"id": "lunch", "start": "10:30", "end": "14:30"},
-                    {"id": "dinner", "start": "17:00", "end": "20:00"},
-                ],
-            },
-        }
-    )
 
 
 def _sp(year: int, month: int, day: int, hour: int, minute: int = 0) -> datetime:
