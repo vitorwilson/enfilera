@@ -158,14 +158,14 @@ Foundation so every later commit is independently testable and deployable.
 The calendar brain. No I/O, fully unit-tested. **Always uses
 server-obtained time.**
 
-- [ ] Parse operating periods and block size from config.
-- [ ] "Is the cafeteria open right now?" — consults operating days/periods,
+- [x] Parse operating periods and block size from config.
+- [x] "Is the cafeteria open right now?" — consults operating days/periods,
       active **closure records** (whole-day or single-period), and the halt
       flag.
-- [ ] Map a timestamp → its (period, block) or "closed".
-- [ ] "Current period" identity for the one-submission-per-period rule.
-- [ ] "Previous block today" lookup for the confidence-gating fallback.
-- [ ] Edge cases: exact boundaries (10:30:00, 14:30:00), between-period gaps,
+- [x] Map a timestamp → its (period, block) or "closed".
+- [x] "Current period" identity for the one-submission-per-period rule.
+- [x] "Previous block today" lookup for the confidence-gating fallback.
+- [x] Edge cases: exact boundaries (10:30:00, 14:30:00), between-period gaps,
       a closure covering only one of the day's two periods, weekend, daylight
       handling for the configured timezone.
 
