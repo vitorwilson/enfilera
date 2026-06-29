@@ -61,6 +61,10 @@ _MIGRATIONS: tuple[str, ...] = (
 
 SCHEMA_VERSION = len(_MIGRATIONS)
 
+# Wait up to this long for a competing writer before raising "database is
+# locked", so the bot and the prune sidecar can share one SQLite file.
+_BUSY_TIMEOUT_MS = 5000
+
 
 def connect(path: str) -> sqlite3.Connection:
     """Open (or create) the database at ``path`` and bring its schema current.
@@ -70,6 +74,10 @@ def connect(path: str) -> sqlite3.Connection:
     """
     conn = sqlite3.connect(path)
     conn.row_factory = sqlite3.Row
+    # The bot and the prune sidecar open the same file from separate processes;
+    # wait briefly for a lock to clear instead of failing with "database is
+    # locked" (the contention is rare — a few writes/min vs one prune/day).
+    conn.execute(f"PRAGMA busy_timeout = {_BUSY_TIMEOUT_MS}")
     migrate(conn)
     return conn
 

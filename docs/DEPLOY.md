@@ -125,19 +125,21 @@ docker compose start
 
 ## 6. Keep the database bounded (pruning)
 
-The bot process runs no scheduler, so the retention job that drops samples past
-the window (default 30 days) and already-past closures runs as its own
-short-lived command. Schedule it from the host — a daily cron is enough:
+This is automatic: `docker compose up` starts a `prune` sidecar alongside the
+bot that drops samples past the retention window (default 30 days) and
+already-past closures once a day, so the SQLite file stays bounded with no host
+cron to remember. It reuses the bot's image, config, and `data/` volume, and
+logs each run's counts as one JSON line:
 
-```cron
-# prune at 04:00 every day (crontab -e)
-0 4 * * * cd /path/to/enfilera && docker compose run --rm enfilera python -m enfilera.prune
+```bash
+docker compose logs -f prune    # watch the daily prune
 ```
 
-It reuses the same image, mounted config, and `data/` volume, prunes, logs the
-counts as one JSON line, and exits. Run it by hand anytime with
-`docker compose run --rm enfilera python -m enfilera.prune`. Without this
-schedule the SQLite file grows without bound.
+To prune on demand (e.g. right after a big purge), run it once yourself:
+
+```bash
+docker compose run --rm enfilera python -m enfilera.prune
+```
 
 ## 7. Cut a release
 

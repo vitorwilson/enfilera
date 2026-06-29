@@ -9,7 +9,7 @@ from datetime import UTC, datetime
 
 import pytest
 
-from enfilera.db import SCHEMA_VERSION, migrate, to_epoch
+from enfilera.db import _BUSY_TIMEOUT_MS, SCHEMA_VERSION, migrate, to_epoch
 
 
 def _tables(conn: sqlite3.Connection) -> set[str]:
@@ -40,6 +40,12 @@ def test_fresh_database_is_empty(memory_db: sqlite3.Connection) -> None:
 def test_halt_seeded_disabled(memory_db: sqlite3.Connection) -> None:
     enabled = memory_db.execute("SELECT enabled FROM halt WHERE id = 1").fetchone()[0]
     assert enabled == 0
+
+
+def test_connect_sets_busy_timeout(memory_db: sqlite3.Connection) -> None:
+    # So the bot and the prune sidecar sharing one file wait rather than error.
+    timeout = memory_db.execute("PRAGMA busy_timeout").fetchone()[0]
+    assert timeout == _BUSY_TIMEOUT_MS
 
 
 # --- migrations idempotent ----------------------------------------------
