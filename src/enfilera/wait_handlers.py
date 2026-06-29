@@ -18,10 +18,10 @@ from telegram.ext import Application, CommandHandler, ContextTypes
 
 from enfilera.estimate import format_estimate
 from enfilera.estimate_service import EstimationService
-from enfilera.lines import Line, find_line
+from enfilera.lines import Line
 from enfilera.messages import NO_LINE, closed_message
 from enfilera.openness_service import OpennessService
-from enfilera.preferences_store import LinePreferenceStore
+from enfilera.preferences_store import LinePreferenceStore, chosen_line
 
 COMMAND = "agora"
 
@@ -54,7 +54,7 @@ class WaitEstimate:
 
     async def show(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """Reply with the user's line estimate, or why the cafeteria is shut."""
-        line = self._chosen_line(update.effective_user.id)
+        line = chosen_line(self._preferences, self._lines, update.effective_user.id)
         if line is None:
             await update.effective_message.reply_text(NO_LINE)
             return
@@ -66,7 +66,3 @@ class WaitEstimate:
         seconds = self._estimates.current_estimate(now, line.id)
         assert seconds is not None  # open ⇒ inside a period ⇒ estimate exists
         await update.effective_message.reply_text(estimate_message(line, seconds))
-
-    def _chosen_line(self, user_id: int) -> Line | None:
-        line_id = self._preferences.get_line(user_id)
-        return None if line_id is None else find_line(self._lines, line_id)

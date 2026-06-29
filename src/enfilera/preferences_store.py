@@ -10,6 +10,8 @@ from __future__ import annotations
 
 import sqlite3
 
+from enfilera.lines import Line, find_line
+
 
 class LinePreferenceStore:
     """Read and write a user's selected line over an injected connection."""
@@ -32,3 +34,15 @@ class LinePreferenceStore:
             "SELECT line_id FROM user_lines WHERE user_id = ?", (user_id,)
         ).fetchone()
         return row["line_id"] if row is not None else None
+
+
+def chosen_line(
+    store: LinePreferenceStore, lines: tuple[Line, ...], user_id: int
+) -> Line | None:
+    """The user's selected :class:`Line`, or ``None`` if unset or now stale.
+
+    Stale = the stored id is no longer in config (a forker removed that line),
+    in which case the caller re-prompts selection just as for an unset user.
+    """
+    line_id = store.get_line(user_id)
+    return None if line_id is None else find_line(lines, line_id)
