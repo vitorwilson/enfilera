@@ -36,4 +36,6 @@ services:
     command:
       - sh
       - -c
-      - "while true; do python -m enfilera.prune; sleep 86400; done"
+      # Let the bot create + migrate the database on first run before the first
+      # prune connects (avoids a fresh-start migration race), then prune daily.
+      - "sleep 30; while true; do python -m enfilera.prune; sleep 86400; done"

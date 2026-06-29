@@ -2,10 +2,11 @@
 
 The bot process runs no scheduler (PTB's JobQueue is disabled in ``bot.py``),
 so the retention job that keeps the SQLite file bounded (docs/PLAN.md §3) runs
-as its own short-lived command, invoked on a schedule by the host — e.g. a
-daily cron that runs ``docker compose run --rm enfilera python -m enfilera.prune``
-(see docs/DEPLOY.md). It loads the same static config and database as the bot,
-prunes, logs the counts as one JSON line, and exits.
+as its own short-lived command. The ``prune`` sidecar in ``compose.yaml`` runs
+it once a day, so pruning ships with the deploy (no host cron); you can also run
+it on demand with ``docker compose run --rm enfilera python -m enfilera.prune``.
+It loads the same static config and database as the bot, prunes, logs the counts
+as one JSON line, and exits.
 """
 
 from __future__ import annotations
