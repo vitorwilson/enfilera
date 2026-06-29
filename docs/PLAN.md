@@ -174,17 +174,17 @@ server-obtained time.**
 The statistical heart. No I/O; takes samples + baseline, returns a number.
 This is where most test lines live.
 
-- [ ] Validity pipeline: `< 1 min` discard → physical clamp → relative
+- [x] Validity pipeline: `< 1 min` discard → physical clamp → relative
       outlier rejection vs **historical baseline** (±k·MAD), with the
       documented guard against anchoring on today's empty live data.
-- [ ] Robust aggregate: median (small n) / 20% trimmed mean (larger n);
+- [x] Robust aggregate: median (small n) / 20% trimmed mean (larger n);
       MAD-based rejection guarded for MAD = 0 and tiny n.
-- [ ] Confidence gating: N_MIN threshold → previous-block → historical seed →
+- [x] Confidence gating: N_MIN threshold → previous-block → historical seed →
       configured default (1 min).
-- [ ] Baseline computation from the rolling raw samples for
+- [x] Baseline computation from the rolling raw samples for
       (queue, weekday, block).
-- [ ] Output formatting to a single rounded number ("~N min").
-- [ ] Adversarial tests: minority poison (high and low), all-identical
+- [x] Output formatting to a single rounded number ("~N min").
+- [x] Adversarial tests: minority poison (high and low), all-identical
       values, empty/sparse blocks, clamp boundaries, first-sample-of-day.
 
 ## Feature 3 — Persistence layer  *(priority: high)*

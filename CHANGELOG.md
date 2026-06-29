@@ -18,3 +18,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   open/closed check (operating days, periods, closures, halt) on server time
   with timezone/DST handling, timestamp → (period, block) mapping, the
   one-submission-per-period identity, and the previous-block fallback.
+- Estimation core (pure, I/O-free): the sample-validity pipeline (physical
+  clamp + relative outlier rejection against the historical baseline, guarded
+  for MAD = 0 and tiny n), robust aggregation (median / 20% trimmed mean),
+  confidence gating (previous block → historical seed → configured default),
+  and "~N min" output formatting. Works in seconds; the `[estimation]` config
+  is parsed and validated (minutes → seconds).
+- Shared config-parsing validators reused across the schedule and estimation
+  config builders.
