@@ -19,26 +19,16 @@ from telegram.ext import Application, CommandHandler, ContextTypes
 from enfilera.estimate import format_estimate
 from enfilera.estimate_service import EstimationService
 from enfilera.lines import Line, find_line
-from enfilera.openness import ClosedStatus
+from enfilera.messages import NO_LINE, closed_message
 from enfilera.openness_service import OpennessService
 from enfilera.preferences_store import LinePreferenceStore
 
 COMMAND = "agora"
 
-_NO_LINE = "Escolha sua fila primeiro com /fila."
-_CLOSED = "Fechado agora. Volte no horário de funcionamento."
-
 
 def estimate_message(line: Line, seconds: int) -> str:
     """The single user-facing wait line, e.g. 'Pix: ~12 min de espera.'"""
     return f"{line.label}: {format_estimate(seconds)} de espera."
-
-
-def closed_message(status: ClosedStatus) -> str:
-    """Closed notice, naming the closure reason when one was declared."""
-    if status.detail:
-        return f"Fechado agora: {status.detail}."
-    return _CLOSED
 
 
 class WaitEstimate:
@@ -66,7 +56,7 @@ class WaitEstimate:
         """Reply with the user's line estimate, or why the cafeteria is shut."""
         line = self._chosen_line(update.effective_user.id)
         if line is None:
-            await update.effective_message.reply_text(_NO_LINE)
+            await update.effective_message.reply_text(NO_LINE)
             return
         now = self._clock()
         status = self._openness.status(now)
