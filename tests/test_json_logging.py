@@ -71,3 +71,26 @@ def test_configure_logging_is_idempotent() -> None:
 def test_configure_logging_sets_level() -> None:
     configure_logging(logging.DEBUG)
     assert logging.getLogger().level == logging.DEBUG
+
+
+def test_configure_logging_quiets_httpx_to_warning() -> None:
+    # httpx INFO logs include the token-bearing Telegram URL; silence them.
+    configure_logging()
+    assert logging.getLogger("httpx").level == logging.WARNING
+
+
+def test_format_redacts_bot_token_in_message() -> None:
+    url = "HTTP Request: POST https://api.telegram.org/bot999:AbCdEfGhIjKlMnOpQrStUvWx/getMe"
+    payload = json.loads(JSONFormatter().format(_record(name="httpx", msg=url)))
+    assert "AbCdEfGhIjKlMnOpQrStUvWx" not in payload["message"]
+    assert "bot<redacted>" in payload["message"]
+
+
+def test_format_redacts_bot_token_in_exception_text() -> None:
+    token = "bot999:AbCdEfGhIjKlMnOpQrStUvWx"
+    try:
+        raise ValueError(f"request to {token}/getMe failed")
+    except ValueError:
+        record = _record(levelname="ERROR", msg="fail", exc_info=sys.exc_info())
+    payload = json.loads(JSONFormatter().format(record))
+    assert "AbCdEfGhIjKlMnOpQrStUvWx" not in payload["exc_info"]
