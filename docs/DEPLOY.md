@@ -118,7 +118,23 @@ cp backups/enfilera-2026-06-29.db data/enfilera.db
 docker compose start
 ```
 
-## 6. Cut a release
+## 6. Keep the database bounded (pruning)
+
+The bot process runs no scheduler, so the retention job that drops samples past
+the window (default 30 days) and already-past closures runs as its own
+short-lived command. Schedule it from the host — a daily cron is enough:
+
+```cron
+# prune at 04:00 every day (crontab -e)
+0 4 * * * cd /path/to/enfilera && docker compose run --rm enfilera python -m enfilera.prune
+```
+
+It reuses the same image, mounted config, and `data/` volume, prunes, logs the
+counts as one JSON line, and exits. Run it by hand anytime with
+`docker compose run --rm enfilera python -m enfilera.prune`. Without this
+schedule the SQLite file grows without bound.
+
+## 7. Cut a release
 
 Releases are triggered by a version tag, never by hand:
 

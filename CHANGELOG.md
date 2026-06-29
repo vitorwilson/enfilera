@@ -60,3 +60,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   wheel + sdist once and publishes the version's CHANGELOG section as the
   GitHub Release body (`bin/changelog-section`), plus `docs/DEPLOY.md` (fork,
   deploy, operate, back up, release).
+- Pruning entrypoint `python -m enfilera.prune`: the retention job (Feature 3)
+  is now actually runnable on a schedule — the bot process has no scheduler, so
+  a daily host cron runs it in a one-off container (documented in
+  `docs/DEPLOY.md`). Previously the job existed but nothing invoked it, so the
+  database would have grown without bound.
