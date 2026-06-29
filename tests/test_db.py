@@ -23,7 +23,8 @@ def _tables(conn: sqlite3.Connection) -> set[str]:
 
 
 def test_connect_creates_every_table(memory_db: sqlite3.Connection) -> None:
-    assert {"samples", "submissions", "closures", "halt"} <= _tables(memory_db)
+    expected = {"samples", "submissions", "closures", "halt", "user_lines"}
+    assert expected <= _tables(memory_db)
 
 
 def test_connect_stamps_schema_version(memory_db: sqlite3.Connection) -> None:

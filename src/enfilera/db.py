@@ -51,6 +51,12 @@ _MIGRATIONS: tuple[str, ...] = (
     );
     INSERT INTO halt (id, enabled) VALUES (1, 0);
     """,
+    """
+    CREATE TABLE user_lines (
+        user_id INTEGER PRIMARY KEY,     -- one row per user: their chosen line
+        line_id TEXT NOT NULL
+    );
+    """,
 )
 
 SCHEMA_VERSION = len(_MIGRATIONS)
