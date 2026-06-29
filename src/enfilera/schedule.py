@@ -19,6 +19,8 @@ from datetime import time
 from itertools import pairwise
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
+from enfilera.config_parsing import positive_int, section
+
 
 @dataclass(frozen=True)
 class Period:
@@ -62,24 +64,17 @@ def build_schedule(raw: Mapping[str, object]) -> Schedule:
     ... }).block_minutes
     60
     """
-    restaurant = _section(raw, "restaurant")
-    schedule = _section(raw, "schedule")
+    restaurant = section(raw, "restaurant")
+    schedule = section(raw, "schedule")
     return Schedule(
         timezone=_parse_timezone(restaurant["timezone"]),
         operating_days=_parse_operating_days(schedule["operating_days"]),
-        block_minutes=_parse_block_minutes(schedule["block_minutes"]),
+        block_minutes=positive_int(schedule["block_minutes"], "block_minutes"),
         periods=_parse_periods(schedule["periods"]),
     )
 
 
 # --- parsing helpers -----------------------------------------------------
-
-
-def _section(raw: Mapping[str, object], name: str) -> Mapping[str, object]:
-    section = raw.get(name)
-    if not isinstance(section, Mapping):
-        raise ValueError(f"config section [{name}] is missing, got {section!r}")
-    return section
 
 
 def _parse_timezone(name: object) -> ZoneInfo:
@@ -99,12 +94,6 @@ def _parse_operating_days(days: object) -> frozenset[int]:
         if not isinstance(day, int) or isinstance(day, bool) or not 1 <= day <= 7:
             raise ValueError(f"operating day must be ISO weekday 1..7, got {day}")
     return result
-
-
-def _parse_block_minutes(value: object) -> int:
-    if not isinstance(value, int) or isinstance(value, bool) or value <= 0:
-        raise ValueError(f"block_minutes must be a positive integer, got {value!r}")
-    return value
 
 
 def _parse_periods(items: object) -> tuple[Period, ...]:
