@@ -18,13 +18,16 @@ from pathlib import Path
 
 from telegram.ext import Application
 
+from enfilera.admin_guard import AdminGuard
 from enfilera.bot import build_application
+from enfilera.closure_handlers import ClosureControls
 from enfilera.closures_store import ClosureStore
 from enfilera.config_loader import AppConfig, load_config
 from enfilera.db import connect
 from enfilera.estimate_service import EstimationService
 from enfilera.flood_guard import FloodGuard
 from enfilera.halt_flag import HaltFlag
+from enfilera.halt_handlers import HaltControls
 from enfilera.info_handlers import InfoLinks
 from enfilera.json_logging import configure_logging
 from enfilera.line_handlers import LineSelection
@@ -74,12 +77,15 @@ def _register_handlers(
 ) -> None:
     samples = SampleStore(conn)
     preferences = LinePreferenceStore(conn)
-    openness = OpennessService(config.schedule, ClosureStore(conn), HaltFlag(conn))
+    closures = ClosureStore(conn)
+    halt = HaltFlag(conn)
+    openness = OpennessService(config.schedule, closures, halt)
     estimates = EstimationService(
         samples, config.schedule, config.estimation, config.retention_days
     )
     recorder = SubmissionRecorder(samples, SubmissionStore(conn), config.schedule)
     limiter = RateLimiter(config.bot.flood_max_events, config.bot.flood_window_seconds)
+    guard = AdminGuard(config.bot.admin_ids)
 
     FloodGuard(limiter, monotonic).register(application)
     LineSelection(config.lines, preferences).register(application)
@@ -96,3 +102,5 @@ def _register_handlers(
         now,
     ).register(application)
     InfoLinks(config.bot.issues_url, config.bot.author_url).register(application)
+    HaltControls(guard, halt, openness, now).register(application)
+    ClosureControls(guard, closures, config.schedule, now).register(application)

@@ -40,6 +40,18 @@ def test_build_app_registers_every_user_command(memory_db: sqlite3.Connection) -
     assert {"fila", "agora", "registrar", "parar", "bug", "sobre"} <= commands
 
 
+def test_build_app_registers_every_admin_command(memory_db: sqlite3.Connection) -> None:
+    commands = _command_names(_app(memory_db))
+    assert {
+        "pausar",
+        "retomar",
+        "status",
+        "fechar",
+        "fechamentos",
+        "reabrir",
+    } <= commands
+
+
 def test_build_app_installs_flood_guard_ahead_of_handlers(
     memory_db: sqlite3.Connection,
 ) -> None:

@@ -41,3 +41,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Composition root and `python -m enfilera` entrypoint: a config loader
   assembles the full static config from one TOML file and wires the stores,
   services, and handlers, so the bot runs end to end.
+- Admin commands (operator control from the phone), gated by the
+  `[bot].admin_ids` allowlist: halt/resume the bot (`/pausar`, `/retomar`),
+  declare a closure for a day, a single period, or a date range with an
+  optional reason (`/fechar`), list upcoming closures (`/fechamentos`),
+  revoke a specific closure (`/reabrir`), and report the live
+  open/closed/halt state and why (`/status`). A non-admin gets a refusal and
+  changes nothing; closure-argument parsing is pure and reports the offending
+  token on bad input.

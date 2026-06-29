@@ -29,10 +29,12 @@ class FakeMessage:
 
 
 class FakeContext:
-    """Carries per-user state across handler calls, like PTB's context."""
+    """Carries per-user state and command args across calls, like PTB's context."""
 
-    def __init__(self) -> None:
+    def __init__(self, args: list[str] | None = None) -> None:
         self.user_data: dict[str, object] = {}
+        # PTB fills context.args with the whitespace-split command arguments.
+        self.args: list[str] = args or []
 
 
 class FakeCallbackQuery:

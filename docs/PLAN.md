@@ -235,14 +235,14 @@ in the core.
 Operator control from the phone; authorization via the config allowlist.
 Mutates dynamic state in the DB (Feature 3).
 
-- [ ] Authorization guard (allowlisted Telegram IDs only).
-- [ ] **Halt / resume** the bot indefinitely.
-- [ ] **Declare a closure** — for today, a future date, or a date range;
+- [x] Authorization guard (allowlisted Telegram IDs only).
+- [x] **Halt / resume** the bot indefinitely.
+- [x] **Declare a closure** — for today, a future date, or a date range;
       whole day **or** a single period (lunch / dinner); optional reason.
-- [ ] **List upcoming closures.**
-- [ ] **Remove a specific closure** (revoke a *ponto facultativo*, reopen a
+- [x] **List upcoming closures.**
+- [x] **Remove a specific closure** (revoke a *ponto facultativo*, reopen a
       closed period) — revoke is first-class, not an afterthought.
-- [ ] **Status** command: current open/closed/halt state and why.
+- [x] **Status** command: current open/closed/halt state and why.
 
 ## Feature 6 — Deploy & operations  *(priority: last)*
 
