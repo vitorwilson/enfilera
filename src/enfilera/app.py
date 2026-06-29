@@ -24,6 +24,7 @@ from enfilera.closure_handlers import ClosureControls
 from enfilera.closures_store import ClosureStore
 from enfilera.config_loader import AppConfig, load_config
 from enfilera.db import connect
+from enfilera.error_handler import ErrorReporter
 from enfilera.estimate_service import EstimationService
 from enfilera.flood_guard import FloodGuard
 from enfilera.halt_flag import HaltFlag
@@ -104,3 +105,4 @@ def _register_handlers(
     InfoLinks(config.bot.issues_url, config.bot.author_url).register(application)
     HaltControls(guard, halt, openness, now).register(application)
     ClosureControls(guard, closures, config.schedule, now).register(application)
+    ErrorReporter().register(application)

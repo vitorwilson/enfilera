@@ -14,6 +14,7 @@ from datetime import date, datetime, time
 from typing import Any
 from zoneinfo import ZoneInfo
 
+import pytest
 from telegram.ext import ApplicationBuilder, CommandHandler
 from telegram_fakes import FakeMessage, FakeUpdate, FakeUser
 
@@ -113,6 +114,33 @@ def test_closed_names_the_closure_reason(memory_db: sqlite3.Connection) -> None:
     LinePreferenceStore(memory_db).set_line(USER, "card")
     ClosureStore(memory_db).declare(Closure(date(2026, 6, 30), None, "feriado"))
     assert "feriado" in _ask(_handler(memory_db))
+
+
+class _NoEstimateService:
+    """Estimation stub returning no number, to exercise the open-but-None case."""
+
+    def current_estimate(self, now: datetime, line_id: str) -> int | None:
+        return None
+
+
+def test_open_but_no_estimate_raises_instead_of_asserting(
+    memory_db: sqlite3.Connection,
+) -> None:
+    # The invariant (open ⇒ an estimate exists) is surfaced as a real error so
+    # it survives `python -O`, where an assert would be stripped.
+    LinePreferenceStore(memory_db).set_line(USER, "card")
+    schedule = _schedule()
+    openness = OpennessService(schedule, ClosureStore(memory_db), HaltFlag(memory_db))
+    handler = WaitEstimate(
+        LINES,
+        LinePreferenceStore(memory_db),
+        openness,
+        _NoEstimateService(),
+        lambda: LUNCH,
+    )
+    update = FakeUpdate(effective_message=FakeMessage(), effective_user=FakeUser(USER))
+    with pytest.raises(RuntimeError, match="no estimate"):
+        _run(handler.show(update, None))
 
 
 def test_register_adds_command_handler(memory_db: sqlite3.Connection) -> None:

@@ -64,5 +64,12 @@ class WaitEstimate:
             await update.effective_message.reply_text(closed_message(status))
             return
         seconds = self._estimates.current_estimate(now, line.id)
-        assert seconds is not None  # open ⇒ inside a period ⇒ estimate exists
+        if seconds is None:
+            # Invariant: open ⇒ inside a period ⇒ an estimate (≥ the seed)
+            # always exists. Surface a loud error (caught by ErrorReporter)
+            # rather than assert, which `python -O` would strip.
+            raise RuntimeError(
+                f"open period yielded no estimate for line {line.id!r} at "
+                f"{now.isoformat()}"
+            )
         await update.effective_message.reply_text(estimate_message(line, seconds))
