@@ -226,9 +226,9 @@ in the core.
       of submitting the wrong number.
 - [x] **Geofence check** on start: request live location, compare to config
       center/radius, **discard the location immediately** after the check.
-- [ ] **"Found a bug?"** → open/link a GitHub issue.
-- [ ] Author/credit info linking the operator's GitHub profile.
-- [ ] Per-user flood protection.
+- [x] **"Found a bug?"** → open/link a GitHub issue.
+- [x] Author/credit info linking the operator's GitHub profile.
+- [x] Per-user flood protection.
 
 ## Feature 5 — Admin commands  *(priority: medium)*
 
