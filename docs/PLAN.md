@@ -140,17 +140,18 @@ core is proven.
 
 Foundation so every later commit is independently testable and deployable.
 
-- [ ] `git init`; Python project layout (`src/`, `tests/`, `config/`,
-      `docs/`, `bin/`). Follow framework convention; small focused modules.
-- [ ] Dependency management + lockfile; pin `python-telegram-bot`.
-- [ ] Single-command test runner; record it in `the project conventions` (replaces the
-      `<project-specific>` placeholder).
-- [ ] Formatter = `black`; linter (`ruff`) warnings-as-errors.
-- [ ] CI on every push/PR: `black --check`, `ruff`, full test suite,
+- [x] `git init`; Python project layout (`src/`, `tests/`, `config/`,
+      `docs/`). Follow framework convention; small focused modules. (`bin/`
+      lands with the Feature 6 deploy entrypoint.)
+- [x] Dependency management + lockfile; pin `python-telegram-bot`.
+- [x] Single-command test runner (`pytest`); recorded in the project
+      conventions (replaces the `<project-specific>` placeholder).
+- [x] Formatter = `black`; linter (`ruff`) warnings-as-errors.
+- [x] CI on every push/PR: `black --check`, `ruff`, full test suite,
       dependency audit (`pip-audit`). Red build blocks merge.
-- [ ] `CHANGELOG.md` (Keep a Changelog); `README.md` opening with the
+- [x] `CHANGELOG.md` (Keep a Changelog); `README.md` opening with the
       problem + one-command quickstart (stack details go in `docs/`).
-- [ ] `config/config.example.*` with fake values committed; real config and
+- [x] `config/config.example.*` with fake values committed; real config and
       any `.env` gitignored.
 
 ## Feature 1 — Time & period engine  *(priority: high — pure logic)*
@@ -211,8 +212,8 @@ behind a thin project-owned interface; dependencies injected.
 The plumbing that connects users to Features 1–3. Thin handlers; logic stays
 in the core.
 
-- [ ] Bot bootstrap, token from env, structured JSON logging.
-- [ ] **Line selection** before use (card-bandejão / bandejinho / pix / …
+- [x] Bot bootstrap, token from env, structured JSON logging.
+- [x] **Line selection** before use (card-bandejão / bandejinho / pix / …
       per config); changeable anytime; persisted per user.
 - [ ] **"How's the line today?"** → show current estimate(s) per the user's
       line, or the closed message when shut.
