@@ -215,7 +215,7 @@ in the core.
 - [x] Bot bootstrap, token from env, structured JSON logging.
 - [x] **Line selection** before use (card-bandejão / bandejinho / pix / …
       per config); changeable anytime; persisted per user.
-- [ ] **"How's the line today?"** → show current estimate(s) per the user's
+- [x] **"How's the line today?"** → show current estimate(s) per the user's
       line, or the closed message when shut.
 - [ ] **"Register time"** timer: start (geofence-checked) → stop at turnstile,
       with confirm/resume; submit only if ≥ 1 min, within geofence, and not
