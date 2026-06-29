@@ -32,3 +32,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   retention pruning, the one-submission-per-period record/query, closure
   declare/range/active/upcoming/revoke + past-closure pruning, and the halt
   flag. Includes the scheduled pruning job that keeps the database bounded.
+- Telegram bot (user flows): structured JSON logging and the application
+  bootstrap (token from env); line selection (`/fila`), the live wait estimate
+  (`/agora`), the geofence-gated register-time timer (`/registrar` → location →
+  `/parar`) with a confirm/resume guard against a premature stop, bug-report
+  and author links (`/bug`, `/sobre`), and a per-user flood guard. The shared
+  location is a presence check only and is never stored.
+- Composition root and `python -m enfilera` entrypoint: a config loader
+  assembles the full static config from one TOML file and wires the stores,
+  services, and handlers, so the bot runs end to end.

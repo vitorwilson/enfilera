@@ -21,11 +21,12 @@ rastreamento, sem armazenar localização.
 uv sync                                              # instala as dependências
 cp config/config.example.toml config/config.toml     # depois edite para o seu bandejão
 export ENFILERA_BOT_TOKEN=...                         # token do bot, via @BotFather
-uv run pytest                                         # roda a suíte de testes
+uv run python -m enfilera                             # inicia o bot
 ```
 
-O ponto de entrada do bot chega na Feature 4; até lá, `uv run pytest` é a
-forma de exercitar o projeto.
+O banco SQLite é criado na primeira execução (`enfilera.db` por padrão; mude
+com `ENFILERA_DB`, e o caminho do config com `ENFILERA_CONFIG`). Rode os testes
+com `uv run pytest`.
 
 ## Faça um fork para o seu bandejão
 

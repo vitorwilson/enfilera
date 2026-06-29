@@ -19,11 +19,12 @@ no stored location.
 uv sync                                              # install dependencies
 cp config/config.example.toml config/config.toml     # then edit for your cafeteria
 export ENFILERA_BOT_TOKEN=...                         # bot token from @BotFather
-uv run pytest                                         # run the test suite
+uv run python -m enfilera                             # start the bot
 ```
 
-The bot entrypoint lands with Feature 4; until then `uv run pytest` is the
-way to exercise the project.
+The SQLite database is created on first run (`enfilera.db` by default; override
+with `ENFILERA_DB`, and the config path with `ENFILERA_CONFIG`). Run the test
+suite with `uv run pytest`.
 
 ## Fork it for your cafeteria
 
