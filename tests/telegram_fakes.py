@@ -9,14 +9,30 @@ test reuses the same fakes rather than redefining them.
 from __future__ import annotations
 
 
+class FakeLocation:
+    """A shared Telegram location (the only fields the geofence reads)."""
+
+    def __init__(self, latitude: float, longitude: float) -> None:
+        self.latitude = latitude
+        self.longitude = longitude
+
+
 class FakeMessage:
     """Records reply_text calls instead of sending to Telegram."""
 
-    def __init__(self) -> None:
+    def __init__(self, location: FakeLocation | None = None) -> None:
+        self.location = location
         self.replies: list[tuple[str, object]] = []
 
     async def reply_text(self, text: str, reply_markup: object = None) -> None:
         self.replies.append((text, reply_markup))
+
+
+class FakeContext:
+    """Carries per-user state across handler calls, like PTB's context."""
+
+    def __init__(self) -> None:
+        self.user_data: dict[str, object] = {}
 
 
 class FakeCallbackQuery:

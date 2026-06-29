@@ -217,11 +217,14 @@ in the core.
       per config); changeable anytime; persisted per user.
 - [x] **"How's the line today?"** → show current estimate(s) per the user's
       line, or the closed message when shut.
-- [ ] **"Register time"** timer: start (geofence-checked) → stop at turnstile,
+- [x] **"Register time"** timer: start (geofence-checked) → stop at turnstile,
       with confirm/resume; submit only if ≥ 1 min, within geofence, and not
-      already submitted this period; otherwise the action is disabled with a
-      clear reason.
-- [ ] **Geofence check** on start: request live location, compare to config
+      already submitted this period; otherwise the action is rejected with a
+      clear reason. Confirm/resume guards a *premature* stop: a plausible-but-
+      early value (10 min when it was 20) passes the clamp, so on /parar the
+      bot shows the elapsed and lets the user resume the original timer instead
+      of submitting the wrong number.
+- [x] **Geofence check** on start: request live location, compare to config
       center/radius, **discard the location immediately** after the check.
 - [ ] **"Found a bug?"** → open/link a GitHub issue.
 - [ ] Author/credit info linking the operator's GitHub profile.
