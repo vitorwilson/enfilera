@@ -1,0 +1,37 @@
+name: Release
+
+# Releases are triggered by a version tag, never by hand. Tag `vX.Y.Z` after
+# moving CHANGELOG's Unreleased section to `## [X.Y.Z]` and bumping
+# src/enfilera/__init__.py; the pipeline builds the artifact and publishes the
+# GitHub Release with that version's changelog section as the body.
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      # Build once: a pure-Python wheel + sdist, architecture-independent.
+      - name: Build the wheel and sdist
+        run: uv build
+
+      - name: Extract this version's changelog section
+        run: bin/changelog-section "${GITHUB_REF_NAME#v}" > release-notes.md
+
+      - name: Publish the GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: release-notes.md
+          files: dist/*

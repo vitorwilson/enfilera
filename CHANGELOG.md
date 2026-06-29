@@ -49,3 +49,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   open/closed/halt state and why (`/status`). A non-admin gets a refusal and
   changes nothing; closure-argument parsing is pure and reports the offending
   token on bad input.
+- Deploy & operations: a one-command, container-based deploy that runs the same
+  anywhere Docker runs — a Raspberry Pi, a VPS, or a laptop. `bin/deploy` wraps
+  `docker compose up -d --build`, and the *same* command targets a remote host
+  via `DOCKER_HOST=ssh://…` or a Docker context; the container's
+  `restart: unless-stopped` policy keeps the bot up across crashes and reboots
+  without systemd. The SQLite database persists in a mounted `data/` volume
+  (copy it to back up); the token comes from the gitignored
+  `config/enfilera.env`. Adds a tag-triggered release workflow that builds the
+  wheel + sdist once and publishes the version's CHANGELOG section as the
+  GitHub Release body (`bin/changelog-section`), plus `docs/DEPLOY.md` (fork,
+  deploy, operate, back up, release).

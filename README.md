@@ -29,9 +29,18 @@ suite with `uv run pytest`.
 ## Fork it for your cafeteria
 
 Enfilera is built to be forked: point it at *your* restaurant by editing one
-config file — lines, operating periods, geofence center/radius — and
-deploying. Every cafeteria-specific value lives in `config/config.toml`;
-nothing is hardcoded. See [`docs/`](docs/) for the fork + deploy guide.
+config file — lines, operating periods, geofence center/radius — and deploy
+with one command that runs the same on a Raspberry Pi, a VPS, or your laptop:
+
+```bash
+cp config/config.example.toml config/config.toml     # edit for your cafeteria
+cp config/enfilera.env.example config/enfilera.env   # add your bot token
+bin/deploy                                           # docker compose up -d --build
+```
+
+Every cafeteria-specific value lives in `config/config.toml`; nothing is
+hardcoded. See [`docs/DEPLOY.md`](docs/DEPLOY.md) for remote deploys, operating,
+and database backup/restore.
 
 ## How it works
 

@@ -1,0 +1,20 @@
+# Keep the build context small and never ship local state or secrets into the
+# image. The Dockerfile copies only pyproject/uv.lock/README/src explicitly.
+.git
+.github
+.venv
+data
+*.db
+*.sqlite
+*.sqlite3
+__pycache__
+*.py[cod]
+.pytest_cache
+.ruff_cache
+.mypy_cache
+tests
+docs
+config/*.env
+config/config.toml
+requirements-audit.txt
+.DS_Store

@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+#
+# Enfilera deploy — the single entrypoint, runnable anywhere Docker runs.
+#
+# Shape (per the project conventions): `docker compose up -d --build`. The bot
+# is supervised by the container restart policy, so there is no systemd to set
+# up. Run this on whatever host will run the bot — your laptop, or a Pi/VPS you
+# SSH into (then `git pull && bin/deploy` to update). See docs/DEPLOY.md for
+# driving a remote Docker daemon (DOCKER_HOST) and its bind-mount caveat.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+if [[ ! -f config/config.toml ]]; then
+  echo "deploy: missing config/config.toml" >&2
+  echo "deploy: copy config/config.example.toml to config/config.toml and edit it" >&2
+  exit 1
+fi
+if [[ ! -f config/enfilera.env ]]; then
+  echo "deploy: missing config/enfilera.env" >&2
+  echo "deploy: copy config/enfilera.env.example to config/enfilera.env and add your token" >&2
+  exit 1
+fi
+
+# Prefer the Compose v2 plugin (`docker compose`); fall back to the standalone
+# v1 binary (`docker-compose`) so older hosts still work.
+compose() {
+  if docker compose version >/dev/null 2>&1; then
+    docker compose "$@"
+  else
+    docker-compose "$@"
+  fi
+}
+
+echo "deploy: building and starting (target: ${DOCKER_HOST:-local Docker})"
+compose up -d --build
+compose ps
+echo "deploy: done — follow logs with: docker compose logs -f"

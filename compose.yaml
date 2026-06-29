@@ -1,0 +1,20 @@
+# Run Enfilera anywhere Docker runs. `bin/deploy` wraps `docker compose up -d
+# --build`; set DOCKER_HOST=ssh://user@host (or pick a docker context) to aim
+# the same command at a remote box.
+services:
+  enfilera:
+    build: .
+    image: enfilera:latest
+    # Uptime matters more than horsepower: bring the bot back after a crash and
+    # after a host reboot, unattended. This replaces a systemd unit.
+    restart: unless-stopped
+    # The bot token (and any ENFILERA_* overrides) come from this gitignored
+    # file — never from the image or this committed compose file.
+    env_file:
+      - config/enfilera.env
+    volumes:
+      # The cafeteria's static config, read-only.
+      - ./config/config.toml:/app/config/config.toml:ro
+      # All dynamic state (samples, submissions, closures, halt) lives in this
+      # single SQLite file on the host, so a backup is just copying it.
+      - ./data:/app/data

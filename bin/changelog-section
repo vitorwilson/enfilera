@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+#
+# Print one version's section body from CHANGELOG.md, for the release pipeline
+# to use as the GitHub Release notes. Prints the lines between the `## [VER]`
+# heading and the next `## ` heading (exclusive).
+#
+#   bin/changelog-section 0.1.0            # reads ./CHANGELOG.md
+#   bin/changelog-section 0.1.0 path.md    # reads a given file
+set -euo pipefail
+
+version="${1:?usage: changelog-section <version> [changelog-path]}"
+changelog="${2:-CHANGELOG.md}"
+
+# index()==1 is a literal start-of-line match, so the version's '[' and '.'
+# are not treated as regex metacharacters.
+awk -v header="## [${version}]" '
+  index($0, header) == 1 { capturing = 1; next }
+  capturing && /^## / { exit }
+  capturing { print }
+' "$changelog"

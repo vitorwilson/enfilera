@@ -246,17 +246,20 @@ Mutates dynamic state in the DB (Feature 3).
 
 ## Feature 6 — Deploy & operations  *(priority: last)*
 
-Make running it on the Pi (and re-running elsewhere) a one-liner.
+Make running it (and re-running elsewhere) a one-liner, on any host with Docker.
 
-- [ ] `bin/deploy` — the single entrypoint (fill the `<project-specific>`
-      shape in `the project conventions`: e.g. sync + restart the service over SSH).
-- [ ] **systemd** unit for supervision + auto-restart (uptime matters more
-      than horsepower; the bot must survive crashes/reboots unattended).
-- [ ] Backup/restore note for the SQLite file.
-- [ ] `docs/` deploy + fork guide: how another student points it at their
-      cafeteria (config, geofence, lines, periods) and ships their own bot.
-- [ ] Release flow: tag `vX.Y.Z` → CI builds/publishes; changelog section
-      becomes the release body.
+- [x] `bin/deploy` — the single entrypoint: `docker compose up -d --build`,
+      runnable on the local host or aimed at a remote one with the *same*
+      command via `DOCKER_HOST=ssh://…` / a Docker context.
+- [x] **Container supervision** (`restart: unless-stopped`) for auto-restart
+      across crashes and reboots, unattended — no systemd to configure. Runs the
+      same on a Pi, a VPS, or a laptop, so forkability holds. (Replaces the
+      original systemd-unit plan; uptime still matters more than horsepower.)
+- [x] Backup/restore note for the SQLite file (the mounted `data/` volume).
+- [x] `docs/DEPLOY.md` deploy + fork guide: how another student points it at
+      their cafeteria (config, geofence, lines, periods) and ships their own bot.
+- [x] Release flow: tag `vX.Y.Z` → CI builds the wheel/sdist and publishes;
+      changelog section becomes the release body.
 
 ---
 

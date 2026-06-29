@@ -32,9 +32,18 @@ com `uv run pytest`.
 
 O Enfilera foi feito para ser forkado: aponte-o para o *seu* restaurante
 editando um único arquivo de configuração — filas, períodos de funcionamento,
-centro e raio da geofence — e faça o deploy. Todo valor específico do bandejão
-fica em `config/config.toml`; nada é fixado no código. Veja [`docs/`](docs/)
-para o guia de fork e deploy.
+centro e raio da geofence — e faça o deploy com um comando que roda igual em um
+Raspberry Pi, uma VPS ou no seu notebook:
+
+```bash
+cp config/config.example.toml config/config.toml     # edite para o seu bandejão
+cp config/enfilera.env.example config/enfilera.env   # coloque o token do bot
+bin/deploy                                           # docker compose up -d --build
+```
+
+Todo valor específico do bandejão fica em `config/config.toml`; nada é fixado
+no código. Veja [`docs/DEPLOY.md`](docs/DEPLOY.md) para deploy remoto, operação
+e backup/restauração do banco.
 
 ## Como funciona
 
