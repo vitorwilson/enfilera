@@ -6,6 +6,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-06-30
+
 ### Added
 - Project scaffold: `uv`-managed Python package with a `src/` layout.
 - Tooling: `pytest` (single-command test runner), `ruff` (lint, warnings as
