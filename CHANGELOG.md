@@ -6,6 +6,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-07-01
+
 ### Added
 - Admin `/usuarios` command: distinct active (submitting) users today and over
   a rolling 30-day window, with a per-line breakdown. Counts come from the
