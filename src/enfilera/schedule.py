@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
-from datetime import time
+from datetime import date, datetime, time
 from itertools import pairwise
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -145,6 +145,25 @@ def _reject_overlaps(periods: tuple[Period, ...]) -> None:
 
 
 # --- pure geometry queries -----------------------------------------------
+
+
+def local_date(moment: datetime, schedule: Schedule) -> date:
+    """The calendar date of ``moment`` in the cafeteria's timezone.
+
+    The operator's "today" — for closures and the /usuarios metric window — is
+    the cafeteria's local date, so a late-night UTC instant still maps to the
+    right local day. Pure: the caller owns the clock and passes the instant in.
+
+    >>> from datetime import UTC, datetime
+    >>> sched = build_schedule({
+    ...     "restaurant": {"timezone": "America/Sao_Paulo"},
+    ...     "schedule": {"operating_days": [1], "block_minutes": 60,
+    ...                  "periods": [{"id": "l", "start": "10:30", "end": "14:30"}]},
+    ... })
+    >>> local_date(datetime(2026, 7, 2, 1, 0, tzinfo=UTC), sched)
+    datetime.date(2026, 7, 1)
+    """
+    return moment.astimezone(schedule.timezone).date()
 
 
 def period_containing(moment: time, schedule: Schedule) -> Period | None:

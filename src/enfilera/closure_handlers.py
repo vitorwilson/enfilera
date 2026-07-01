@@ -21,7 +21,7 @@ from enfilera.admin_commands import parse_closure_args, parse_revoke_args
 from enfilera.admin_guard import AdminGuard, admin_only
 from enfilera.admin_messages import closure_declared, closure_revoked, closures_list
 from enfilera.closures_store import ClosureStore
-from enfilera.schedule import Schedule
+from enfilera.schedule import Schedule, local_date
 
 CLOSE_COMMAND = "fechar"
 LIST_COMMAND = "fechamentos"
@@ -105,4 +105,4 @@ class ClosureControls:
 
     def _today(self) -> date:
         """Server time localized to the cafeteria zone, as a calendar date."""
-        return self._clock().astimezone(self._schedule.timezone).date()
+        return local_date(self._clock(), self._schedule)

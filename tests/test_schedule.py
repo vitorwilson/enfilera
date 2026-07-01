@@ -5,7 +5,7 @@ boundary cases called out in docs/PLAN.md Feature 1: exact period edges,
 between-period gaps, clock-aligned blocks, and the previous-block lookup.
 """
 
-from datetime import time
+from datetime import UTC, date, datetime, time
 
 import pytest
 
@@ -13,6 +13,7 @@ from enfilera.schedule import (
     Block,
     block_for,
     build_schedule,
+    local_date,
     period_containing,
     previous_block,
 )
@@ -106,6 +107,16 @@ def test_build_schedule_rejects_unknown_timezone() -> None:
     raw["restaurant"]["timezone"] = "Mars/Olympus_Mons"
     with pytest.raises(ValueError, match="Mars/Olympus_Mons"):
         build_schedule(raw)
+
+
+# --- local_date: timezone projection -------------------------------------
+
+
+def test_local_date_projects_into_the_cafeteria_zone() -> None:
+    schedule = build_schedule(_raw_config())
+    # 01:00 UTC on Jul 2 is still Jul 1 (21:00) in São Paulo (UTC-3).
+    moment = datetime(2026, 7, 2, 1, 0, tzinfo=UTC)
+    assert local_date(moment, schedule) == date(2026, 7, 1)
 
 
 # --- period_containing: half-open [start, end) ---------------------------
