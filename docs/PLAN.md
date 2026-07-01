@@ -243,6 +243,12 @@ Mutates dynamic state in the DB (Feature 3).
 - [x] **Remove a specific closure** (revoke a *ponto facultativo*, reopen a
       closed period) — revoke is first-class, not an afterthought.
 - [x] **Status** command: current open/closed/halt state and why.
+- [x] **Users** command (`/usuarios`): distinct *active* (submitting) users
+      today and over a rolling 30-day window, with a per-line breakdown. Read
+      from the submissions table (one row per user = their latest submission,
+      so a date filter gives an exact distinct count and the per-line split
+      partitions users with no double-counting). Samples stay anonymous — no
+      per-sample identity is stored for this.
 
 ## Feature 6 — Deploy & operations  *(priority: last)*
 

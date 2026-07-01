@@ -11,6 +11,7 @@ from enfilera.admin_messages import (
     closure_declared,
     closure_revoked,
     closures_list,
+    user_metrics,
 )
 from enfilera.closures import Closure
 from enfilera.openness import ClosedReason, ClosedStatus, OpenStatus
@@ -103,3 +104,23 @@ def test_status_closure_without_reason_has_fallback() -> None:
 def test_status_outside_periods() -> None:
     message = admin_status(ClosedStatus(ClosedReason.OUTSIDE_PERIODS))
     assert "fora do horário" in message
+
+
+# --- user_metrics --------------------------------------------------------
+
+
+def test_user_metrics_shows_today_and_window_totals() -> None:
+    message = user_metrics(3, 30, 27, [])
+    assert "• Hoje: 3" in message
+    assert "• Últimos 30 dias: 27" in message
+
+
+def test_user_metrics_lists_each_line_under_the_window() -> None:
+    message = user_metrics(3, 30, 27, [("Cartão", 15), ("Pix", 12)])
+    assert "Por fila (30 dias):" in message
+    assert "• Cartão: 15" in message
+    assert "• Pix: 12" in message
+
+
+def test_user_metrics_omits_breakdown_when_empty() -> None:
+    assert "Por fila" not in user_metrics(0, 30, 0, [])

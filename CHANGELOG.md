@@ -6,6 +6,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- Admin `/usuarios` command: distinct active (submitting) users today and over
+  a rolling 30-day window, with a per-line breakdown. Counts come from the
+  submissions table (one row per user holds their latest submission), so the
+  figures are exact and the per-line split partitions users without double-
+  counting; samples stay anonymous. A schema migration adds `line_id` to the
+  submissions row.
+
 ## [0.1.0] - 2026-06-30
 
 ### Added

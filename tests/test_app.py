@@ -49,6 +49,7 @@ def test_build_app_registers_every_admin_command(memory_db: sqlite3.Connection) 
         "fechar",
         "fechamentos",
         "reabrir",
+        "usuarios",
     } <= commands
 
 

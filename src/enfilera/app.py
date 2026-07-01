@@ -32,6 +32,7 @@ from enfilera.halt_handlers import HaltControls
 from enfilera.info_handlers import InfoLinks
 from enfilera.json_logging import configure_logging
 from enfilera.line_handlers import LineSelection
+from enfilera.metrics_handlers import MetricsControls
 from enfilera.openness_service import OpennessService
 from enfilera.preferences_store import LinePreferenceStore
 from enfilera.rate_limit import RateLimiter
@@ -39,6 +40,7 @@ from enfilera.samples_store import SampleStore
 from enfilera.submission_recorder import SubmissionRecorder
 from enfilera.submissions_store import SubmissionStore
 from enfilera.timer_handlers import RegisterTimer
+from enfilera.user_metrics_store import UserMetricsStore
 from enfilera.wait_handlers import WaitEstimate
 
 
@@ -105,4 +107,7 @@ def _register_handlers(
     InfoLinks(config.bot.issues_url, config.bot.author_url).register(application)
     HaltControls(guard, halt, openness, now).register(application)
     ClosureControls(guard, closures, config.schedule, now).register(application)
+    MetricsControls(
+        guard, UserMetricsStore(conn), config.lines, config.schedule, now
+    ).register(application)
     ErrorReporter().register(application)

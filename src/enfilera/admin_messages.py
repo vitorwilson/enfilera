@@ -26,6 +26,29 @@ _CLOSED_TEXT = {
 }
 
 
+def user_metrics(
+    today: int, window_days: int, window_count: int, per_line: list[tuple[str, int]]
+) -> str:
+    """Render the ``/usuarios`` read: active users plus a per-line split.
+
+    ``per_line`` is ``(label, count)`` in config order; an empty list omits
+    the breakdown. ``window_days`` labels the rolling window so the wording
+    and the query never drift apart.
+
+    >>> user_metrics(3, 30, 27, [("Cartão", 15), ("Pix", 12)]).splitlines()[1]
+    '• Hoje: 3'
+    """
+    lines = [
+        "Usuários únicos:",
+        f"• Hoje: {today}",
+        f"• Últimos {window_days} dias: {window_count}",
+    ]
+    if per_line:
+        lines += ["", f"Por fila ({window_days} dias):"]
+        lines += [f"• {label}: {count}" for label, count in per_line]
+    return "\n".join(lines)
+
+
 def closure_declared(count: int, spec: ClosureSpec) -> str:
     """Confirm a declared closure, noting the day count for a range.
 
