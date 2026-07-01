@@ -133,7 +133,7 @@ def test_start_rejects_when_closed(memory_db: sqlite3.Connection) -> None:
 
 def test_start_rejects_when_already_submitted(memory_db: sqlite3.Connection) -> None:
     _pick_card(memory_db)
-    SubmissionStore(memory_db).mark(USER, date(2026, 6, 30), "lunch")
+    SubmissionStore(memory_db).mark(USER, date(2026, 6, 30), "lunch", "card")
     update = _cmd()
     _run(_timer(memory_db, Clock(START)).start(update, FakeContext()))
     assert "já registrou" in _last_reply(update)

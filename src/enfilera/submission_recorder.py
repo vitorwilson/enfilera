@@ -49,4 +49,4 @@ class SubmissionRecorder:
         period = current_period(start, self._schedule)
         if period is None:
             raise ValueError(f"start {start!r} is outside every operating period")
-        self._submissions.mark(user_id, period.date, period.period_id)
+        self._submissions.mark(user_id, period.date, period.period_id, line_id)

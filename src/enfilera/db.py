@@ -57,6 +57,12 @@ _MIGRATIONS: tuple[str, ...] = (
         line_id TEXT NOT NULL
     );
     """,
+    # The line of a user's most-recent submission, so the /usuarios metric can
+    # break active users down by line. Nullable: rows written before this
+    # column existed keep NULL and fold into an "unknown" bucket in the read.
+    """
+    ALTER TABLE submissions ADD COLUMN line_id TEXT;
+    """,
 )
 
 SCHEMA_VERSION = len(_MIGRATIONS)

@@ -19,19 +19,23 @@ class SubmissionStore:
     def __init__(self, conn: sqlite3.Connection) -> None:
         self._conn = conn
 
-    def mark(self, user_id: int, period_date: date, period_id: str) -> None:
+    def mark(
+        self, user_id: int, period_date: date, period_id: str, line_id: str
+    ) -> None:
         """Record that ``user_id`` submitted in (``period_date``, ``period_id``).
 
         Overwrites the user's previous period, so marking a new period
-        re-arms them for it while disabling the one just used.
+        re-arms them for it while disabling the one just used. ``line_id`` is
+        the line of this submission, kept for the /usuarios per-line metric.
         """
         with self._conn:
             self._conn.execute(
-                "INSERT INTO submissions (user_id, period_date, period_id) "
-                "VALUES (?, ?, ?) "
+                "INSERT INTO submissions (user_id, period_date, period_id, line_id) "
+                "VALUES (?, ?, ?, ?) "
                 "ON CONFLICT (user_id) DO UPDATE SET "
-                "period_date = excluded.period_date, period_id = excluded.period_id",
-                (user_id, period_date.isoformat(), period_id),
+                "period_date = excluded.period_date, "
+                "period_id = excluded.period_id, line_id = excluded.line_id",
+                (user_id, period_date.isoformat(), period_id, line_id),
             )
 
     def has_submitted(self, user_id: int, period_date: date, period_id: str) -> bool:

@@ -27,6 +27,14 @@ def test_connect_creates_every_table(memory_db: sqlite3.Connection) -> None:
     assert expected <= _tables(memory_db)
 
 
+def test_submissions_has_line_column(memory_db: sqlite3.Connection) -> None:
+    # The /usuarios per-line metric needs the submission's line recorded.
+    columns = {
+        row["name"] for row in memory_db.execute("PRAGMA table_info(submissions)")
+    }
+    assert "line_id" in columns
+
+
 def test_connect_stamps_schema_version(memory_db: sqlite3.Connection) -> None:
     version = memory_db.execute("PRAGMA user_version").fetchone()[0]
     assert version == SCHEMA_VERSION
