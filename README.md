@@ -30,17 +30,28 @@ suite with `uv run pytest`.
 
 Enfilera is built to be forked: point it at *your* restaurant by editing one
 config file — lines, operating periods, geofence center/radius — and deploy
-with one command that runs the same on a Raspberry Pi, a VPS, or your laptop:
+with one command that runs the same on a Raspberry Pi, a VPS, or your laptop.
 
 ```bash
-cp config/config.example.toml config/config.toml     # edit for your cafeteria
-cp config/enfilera.env.example config/enfilera.env   # add your bot token
-bin/deploy                                           # docker compose up -d --build
+cp config/config.example.toml config/config.toml     # 1. copy the config
+cp config/enfilera.env.example config/enfilera.env   # 2. copy the env file
 ```
 
-Every cafeteria-specific value lives in `config/config.toml`; nothing is
-hardcoded. See [`docs/DEPLOY.md`](docs/DEPLOY.md) for remote deploys, operating,
-and database backup/restore.
+Now **edit both** before deploying — they ship with placeholder values, and the
+fake bot token alone will stop the bot from starting:
+
+- `config/config.toml` — your lines, operating periods, timezone, geofence, and
+  `admin_ids`. Every cafeteria-specific value lives here; nothing is hardcoded.
+- `config/enfilera.env` — paste the real bot token from
+  [@BotFather](https://t.me/BotFather).
+
+```bash
+bin/deploy                                           # 3. docker compose up -d --build
+```
+
+The database directory and its ownership are handled on first run — no manual
+setup on any host. See [`docs/DEPLOY.md`](docs/DEPLOY.md) for remote deploys,
+operating, and database backup/restore.
 
 ## How it works
 

@@ -26,15 +26,17 @@ ENV PATH="/app/.venv/bin:$PATH" \
     ENFILERA_DB=/app/data/enfilera.db
 COPY --from=build /app/.venv /app/.venv
 COPY src ./src
-# Drop root: the bot needs no privileges and exposes no inbound ports. UID 1000
-# matches the default first user on Raspberry Pi OS / Ubuntu, so the
-# bind-mounted ./data is writable out of the box; on a host where your UID
-# differs, `chown -R 1000:1000 data` (see docs/DEPLOY.md).
+# The bot needs no privileges, but the entrypoint must briefly be root to fix
+# the owner of the bind-mounted ./data: a rootful Docker host creates a missing
+# bind source as root:root, which the unprivileged app user (UID 1000) cannot
+# write. So the image keeps root as its entry user and enfilera.entrypoint
+# chowns the volume to `app` and drops to it before exec — no manual `chown` on
+# any host, whatever the operator's login UID. See src/enfilera/entrypoint.py.
 RUN useradd --create-home --uid 1000 app \
     && mkdir -p /app/data \
     && chown app /app/data
-USER app
 # config/ is bind-mounted at runtime (config.toml) and the token arrives via
 # the compose env_file; data/ is a mounted volume holding the SQLite database,
-# so neither is baked into the image.
+# so neither is baked into the image. The entrypoint drops to `app` at start.
+ENTRYPOINT ["python", "-m", "enfilera.entrypoint"]
 CMD ["python", "-m", "enfilera"]

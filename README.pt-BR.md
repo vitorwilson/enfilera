@@ -33,17 +33,29 @@ com `uv run pytest`.
 O Enfilera foi feito para ser forkado: aponte-o para o *seu* restaurante
 editando um único arquivo de configuração — filas, períodos de funcionamento,
 centro e raio da geofence — e faça o deploy com um comando que roda igual em um
-Raspberry Pi, uma VPS ou no seu notebook:
+Raspberry Pi, uma VPS ou no seu notebook.
 
 ```bash
-cp config/config.example.toml config/config.toml     # edite para o seu bandejão
-cp config/enfilera.env.example config/enfilera.env   # coloque o token do bot
-bin/deploy                                           # docker compose up -d --build
+cp config/config.example.toml config/config.toml     # 1. copie a config
+cp config/enfilera.env.example config/enfilera.env   # 2. copie o arquivo .env
 ```
 
-Todo valor específico do bandejão fica em `config/config.toml`; nada é fixado
-no código. Veja [`docs/DEPLOY.md`](docs/DEPLOY.md) para deploy remoto, operação
-e backup/restauração do banco.
+Agora **edite os dois** antes do deploy — eles vêm com valores de exemplo, e só
+o token falso já impede o bot de iniciar:
+
+- `config/config.toml` — suas filas, períodos, fuso horário, geofence e
+  `admin_ids`. Todo valor específico do bandejão fica aqui; nada é fixado no
+  código.
+- `config/enfilera.env` — cole o token real do bot, obtido no
+  [@BotFather](https://t.me/BotFather).
+
+```bash
+bin/deploy                                           # 3. docker compose up -d --build
+```
+
+O diretório do banco e sua permissão são resolvidos na primeira execução — sem
+configuração manual em nenhum host. Veja [`docs/DEPLOY.md`](docs/DEPLOY.md) para
+deploy remoto, operação e backup/restauração do banco.
 
 ## Como funciona
 

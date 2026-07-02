@@ -1,0 +1,4 @@
+# Keeps the `data/` directory present in a fresh clone so it can be the bind
+# mount for the SQLite database (see compose.yaml). The database itself
+# (data/enfilera.db) is gitignored; only this placeholder is tracked. The
+# container entrypoint fixes ownership on first run — no manual chown needed.

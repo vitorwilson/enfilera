@@ -6,6 +6,17 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-07-02
+
+### Fixed
+- Docker first run on a rootful host no longer needs a manual `chown`. The
+  daemon creates a missing bind-mounted `data/` as `root:root`, which the
+  unprivileged bot user could not write, so the SQLite database failed to open.
+  The container now starts as root and an entrypoint shim (`enfilera.entrypoint`)
+  chowns the data volume to the app user and drops privileges before exec — the
+  database opens on any host, whatever the operator's login UID. A tracked
+  `data/.gitkeep` keeps the directory present in a fresh clone.
+
 ## [0.2.1] - 2026-07-02
 
 ### Changed
