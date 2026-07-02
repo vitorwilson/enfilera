@@ -56,7 +56,11 @@ DECISION_PATTERN = r"^timer:"
 _CONFIRM = "timer:confirm"
 _RESUME = "timer:resume"
 
-_START_PROMPT = "Compartilhe sua localização para começar o cronômetro."
+_START_PROMPT = (
+    "Compartilhe sua localização para começar o cronômetro.\n\n"
+    "🔒 Ela serve só para confirmar que você está no restaurante e é "
+    "descartada logo em seguida — o bot nunca guarda sua localização."
+)
 _OUTSIDE = "Você precisa estar no restaurante para começar."
 _ALREADY = "Você já registrou um tempo neste período. Volte no próximo."
 _NEED_START = "Use /registrar para começar antes de enviar a localização."

@@ -6,6 +6,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-07-02
+
+### Changed
+- The `/registrar` location prompt now explains that the shared location is
+  used only to confirm presence at the restaurant and is discarded right
+  after — never stored. Reassures privacy-wary users so we don't lose
+  contributors (or field questions) over the location request.
+
 ## [0.2.0] - 2026-07-01
 
 ### Added

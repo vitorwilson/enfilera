@@ -117,6 +117,19 @@ def test_start_prompts_for_location_when_open(memory_db: sqlite3.Connection) -> 
     assert context.user_data["awaiting_line"] == "card"
 
 
+def test_start_prompt_reassures_location_is_not_stored(
+    memory_db: sqlite3.Connection,
+) -> None:
+    # Users balk at sharing location; the prompt must say why it is asked and
+    # that it is discarded, or we lose contributors to a privacy worry.
+    _pick_card(memory_db)
+    update, context = _cmd(), FakeContext()
+    _run(_timer(memory_db, Clock(START)).start(update, context))
+    text = update.effective_message.replies[-1][0]
+    assert "confirmar que você está no restaurante" in text  # only for verification
+    assert "nunca guarda" in text  # and never stored
+
+
 def test_start_rejects_when_no_line(memory_db: sqlite3.Connection) -> None:
     update = _cmd()
     _run(_timer(memory_db, Clock(START)).start(update, FakeContext()))
