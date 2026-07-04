@@ -1,0 +1,4 @@
+# Keeps the `backups/` directory present in a fresh clone so it can be the bind
+# mount for the backup sidecar's snapshots (see compose.yaml). The snapshots
+# themselves (backups/enfilera-*.db) are gitignored; only this placeholder is
+# tracked. The container entrypoint fixes ownership on first run.

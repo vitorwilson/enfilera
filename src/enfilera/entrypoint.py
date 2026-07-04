@@ -25,13 +25,11 @@ from collections.abc import Callable, Mapping, Sequence
 
 _APP_USER = "app"
 _DEFAULT_DB = "/app/data/enfilera.db"
+_DEFAULT_BACKUP_DIR = "/app/backups"
 
 
 def data_dir(environ: Mapping[str, str]) -> str:
-    """Directory that must be writable by the app user — where the DB lives.
-
-    Derived from ``ENFILERA_DB`` so overriding the database path moves the
-    chown target with it.
+    """Directory holding the database — derived from ``ENFILERA_DB``.
 
     >>> data_dir({"ENFILERA_DB": "/srv/enfilera/state/db.sqlite"})
     '/srv/enfilera/state'
@@ -39,18 +37,29 @@ def data_dir(environ: Mapping[str, str]) -> str:
     return os.path.dirname(environ.get("ENFILERA_DB", _DEFAULT_DB))
 
 
+def writable_dirs(environ: Mapping[str, str]) -> list[str]:
+    """The bind-mounted dirs the app user must own: the DB dir and the backups
+    dir. Both are created ``root:root`` by a rootful daemon when their host
+    source is missing, so the entrypoint chowns each before dropping privileges.
+
+    >>> writable_dirs({"ENFILERA_DB": "/app/data/enfilera.db"})
+    ['/app/data', '/app/backups']
+    """
+    return [data_dir(environ), environ.get("ENFILERA_BACKUP_DIR", _DEFAULT_BACKUP_DIR)]
+
+
 def main(
     argv: Sequence[str],
     environ: Mapping[str, str],
     is_root: Callable[[], bool],
-    take_ownership: Callable[[str], None],
+    take_ownership: Callable[[Sequence[str]], None],
     exec_command: Callable[[Sequence[str]], None],
 ) -> None:
-    """Chown the data volume and drop privileges (only when root), then exec.
+    """Chown the mounted volumes and drop privileges (only when root), then exec.
 
     Side effects are injected so the branch logic is unit-testable without
     actually being root: ``is_root`` reports the effective UID, ``take_ownership``
-    chowns the data dir and drops to ``app``, ``exec_command`` replaces this
+    chowns the writable dirs and drops to ``app``, ``exec_command`` replaces this
     process with the target command.
     """
     command = argv[1:]
@@ -60,14 +69,15 @@ def main(
             "expected the target command after the script name"
         )
     if is_root():
-        take_ownership(data_dir(environ))
+        take_ownership(writable_dirs(environ))
     exec_command(command)
 
 
-def _take_ownership(directory: str) -> None:
-    """Give the data dir to ``app`` and drop this process to that user."""
+def _take_ownership(directories: Sequence[str]) -> None:
+    """Give each mounted dir to ``app`` and drop this process to that user."""
     user = pwd.getpwnam(_APP_USER)
-    _chown_tree(directory, user.pw_uid, user.pw_gid)
+    for directory in directories:
+        _chown_tree(directory, user.pw_uid, user.pw_gid)
     _drop_privileges(user)
 
 

@@ -10,6 +10,7 @@ token is *not* part of this: it comes from the environment (see ``BotConfig``).
 from __future__ import annotations
 
 import tomllib
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -31,6 +32,7 @@ class AppConfig:
     estimation: EstimationConfig
     lines: tuple[Line, ...]
     retention_days: int
+    backup_keep: int
 
 
 def build_config(raw: dict) -> AppConfig:
@@ -42,6 +44,7 @@ def build_config(raw: dict) -> AppConfig:
         estimation=build_estimation_config(raw),
         lines=build_lines(raw),
         retention_days=_retention_days(raw),
+        backup_keep=_backup_keep(raw),
     )
 
 
@@ -55,3 +58,16 @@ def load_config(path: str | Path) -> AppConfig:
 def _retention_days(raw: dict) -> int:
     retention = section(raw, "retention")
     return positive_int(retention["sample_days"], "sample_days")
+
+
+# Backups are optional config: a fork (or the already-deployed install) that
+# never adds a [backup] section still gets automatic backups at this default,
+# so shipping the feature can't break a config written before it existed.
+_DEFAULT_BACKUP_KEEP = 30
+
+
+def _backup_keep(raw: dict) -> int:
+    backup = raw.get("backup")
+    if not isinstance(backup, Mapping) or "keep" not in backup:
+        return _DEFAULT_BACKUP_KEEP
+    return positive_int(backup["keep"], "keep")

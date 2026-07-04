@@ -27,17 +27,27 @@ def test_data_dir_falls_back_to_default() -> None:
     assert entrypoint.data_dir({}) == "/app/data"
 
 
+def test_writable_dirs_covers_data_and_backups() -> None:
+    assert entrypoint.writable_dirs(
+        {"ENFILERA_DB": "/app/data/enfilera.db", "ENFILERA_BACKUP_DIR": "/app/backups"}
+    ) == ["/app/data", "/app/backups"]
+
+
+def test_writable_dirs_falls_back_to_defaults() -> None:
+    assert entrypoint.writable_dirs({}) == ["/app/data", "/app/backups"]
+
+
 def test_main_chowns_then_execs_when_root() -> None:
     events: list[tuple[str, object]] = []
     entrypoint.main(
         ["entrypoint.py", "python", "-m", "enfilera"],
-        {"ENFILERA_DB": "/app/data/enfilera.db"},
+        {"ENFILERA_DB": "/app/data/enfilera.db", "ENFILERA_BACKUP_DIR": "/app/backups"},
         is_root=lambda: True,
-        take_ownership=lambda directory: events.append(("chown", directory)),
+        take_ownership=lambda directories: events.append(("chown", list(directories))),
         exec_command=lambda command: events.append(("exec", list(command))),
     )
     assert events == [
-        ("chown", "/app/data"),
+        ("chown", ["/app/data", "/app/backups"]),
         ("exec", ["python", "-m", "enfilera"]),
     ]
 
@@ -48,7 +58,7 @@ def test_main_skips_chown_when_not_root() -> None:
         ["entrypoint.py", "sh", "-c", "loop"],
         {},
         is_root=lambda: False,
-        take_ownership=lambda directory: events.append(("chown", directory)),
+        take_ownership=lambda directories: events.append(("chown", list(directories))),
         exec_command=lambda command: events.append(("exec", list(command))),
     )
     assert events == [("exec", ["sh", "-c", "loop"])]
@@ -60,7 +70,7 @@ def test_main_rejects_missing_command() -> None:
             ["entrypoint.py"],
             {},
             is_root=lambda: True,
-            take_ownership=lambda directory: None,
+            take_ownership=lambda directories: None,
             exec_command=lambda command: None,
         )
     assert "no command" in str(excinfo.value)

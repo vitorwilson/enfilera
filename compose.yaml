@@ -20,6 +20,9 @@ x-enfilera-base: &base
     # All dynamic state (samples, submissions, closures, halt) lives in this
     # single SQLite file on the host, so a backup is just copying it.
     - ./data:/app/data
+    # Rotating database snapshots written by the `backup` sidecar. On the host
+    # so they survive the container and can be pulled off-box (docs/DEPLOY.md).
+    - ./backups:/app/backups
 
 services:
   enfilera:
@@ -39,3 +42,18 @@ services:
       # Let the bot create + migrate the database on first run before the first
       # prune connects (avoids a fresh-start migration race), then prune daily.
       - "sleep 30; while true; do python -m enfilera.prune; sleep 86400; done"
+
+  # Backup job: write a consistent snapshot of the database and keep the most
+  # recent [backup].keep, once a day. Uses SQLite's online backup, so the bot
+  # keeps serving during a snapshot; reuses the bot's image and volumes, and the
+  # loop plus restart policy keep it running with no host scheduler.
+  backup:
+    <<: *base
+    depends_on:
+      - enfilera
+    command:
+      - sh
+      - -c
+      # Let the bot create the database on first run before the first snapshot,
+      # then back up daily. Staggered a little after the prune sidecar.
+      - "sleep 40; while true; do python -m enfilera.backup; sleep 86400; done"

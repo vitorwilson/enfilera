@@ -6,6 +6,18 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-07-04
+
+### Added
+- Automatic database backups. A `backup` sidecar (installed with `docker compose
+  up`, no host cron) writes a consistent snapshot of the SQLite database to
+  `backups/` once a day using SQLite's online backup — the bot keeps serving
+  during the snapshot — and rotates to the most recent `[backup].keep` (default
+  30). The `[backup]` config section is optional, so an install written before
+  this feature keeps working and still gets backups. The entrypoint now also
+  fixes ownership of the bind-mounted `backups/` directory. docs/DEPLOY.md §5
+  covers on-demand backups, copying snapshots off the Pi, and restore.
+
 ## [0.2.2] - 2026-07-02
 
 ### Fixed

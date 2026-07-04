@@ -102,25 +102,38 @@ All dynamic state — samples, per-user submissions, closures, the halt flag —
 lives in a single SQLite file on the host at **`data/enfilera.db`** (a mounted
 volume). The pruning job keeps it bounded, so it stays small.
 
-**Back up** (a quick copy is fine for casual snapshots):
+**Backups are automatic.** `docker compose up` starts a `backup` sidecar that
+writes a consistent snapshot to **`backups/`** once a day and keeps the most
+recent `[backup].keep` (default 7), deleting older ones. It uses SQLite's online
+backup, so the bot keeps serving during a snapshot — no downtime, no manual
+`cp`, no host cron. Snapshots are named `enfilera-YYYYMMDD-HHMMSS.db`:
 
 ```bash
-cp data/enfilera.db backups/enfilera-$(date +%F).db
+docker compose logs -f backup     # watch the daily snapshot
+ls -1 backups/                    # the rotation, newest last
 ```
 
-For a guaranteed-consistent snapshot while the bot is running, stop it briefly:
+**Back up on demand** — e.g. right before a risky migration:
+
+```bash
+docker compose run --rm backup python -m enfilera.backup
+```
+
+**Copy the snapshots off the Pi.** An SD card is a single point of failure, so
+on-Pi snapshots alone are not enough. Pull `backups/` to another machine on a
+schedule — nothing to install on the Pi. From that other machine:
+
+```bash
+rsync -az pi@raspberrypi.local:enfilera/backups/ ./enfilera-backups/
+```
+
+(or `scp`; drop it in that machine's crontab.)
+
+**Restore:** stop the bot, copy a chosen snapshot over the live DB, start again.
 
 ```bash
 docker compose stop
-cp data/enfilera.db backups/enfilera-$(date +%F).db
-docker compose start
-```
-
-**Restore:** stop the bot, drop the backup in place, start it again.
-
-```bash
-docker compose stop
-cp backups/enfilera-2026-06-29.db data/enfilera.db
+cp backups/enfilera-20260704-210500.db data/enfilera.db
 docker compose start
 ```
 

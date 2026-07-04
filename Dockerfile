@@ -23,7 +23,8 @@ WORKDIR /app
 ENV PATH="/app/.venv/bin:$PATH" \
     PYTHONUNBUFFERED=1 \
     ENFILERA_CONFIG=/app/config/config.toml \
-    ENFILERA_DB=/app/data/enfilera.db
+    ENFILERA_DB=/app/data/enfilera.db \
+    ENFILERA_BACKUP_DIR=/app/backups
 COPY --from=build /app/.venv /app/.venv
 COPY src ./src
 # The bot needs no privileges, but the entrypoint must briefly be root to fix
@@ -33,10 +34,11 @@ COPY src ./src
 # chowns the volume to `app` and drops to it before exec — no manual `chown` on
 # any host, whatever the operator's login UID. See src/enfilera/entrypoint.py.
 RUN useradd --create-home --uid 1000 app \
-    && mkdir -p /app/data \
-    && chown app /app/data
+    && mkdir -p /app/data /app/backups \
+    && chown app /app/data /app/backups
 # config/ is bind-mounted at runtime (config.toml) and the token arrives via
-# the compose env_file; data/ is a mounted volume holding the SQLite database,
-# so neither is baked into the image. The entrypoint drops to `app` at start.
+# the compose env_file; data/ and backups/ are mounted volumes holding the
+# SQLite database and its snapshots, so none is baked into the image. The
+# entrypoint drops to `app` at start.
 ENTRYPOINT ["python", "-m", "enfilera.entrypoint"]
 CMD ["python", "-m", "enfilera"]

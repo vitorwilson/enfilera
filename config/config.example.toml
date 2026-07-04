@@ -90,3 +90,11 @@ mad_k = 3.0
 [retention]
 # The pruning job drops raw samples older than this many days.
 sample_days = 30
+
+[backup]
+# The backup sidecar writes a consistent snapshot of the database to `backups/`
+# once a day (SQLite online backup, so the bot keeps serving) and keeps the most
+# recent `keep`, deleting older ones. Optional: omit this section and backups
+# still run at the default (30). A Pi's SD card is a single point of failure —
+# copy `backups/` off-host too (see docs/DEPLOY.md §5).
+keep = 30
