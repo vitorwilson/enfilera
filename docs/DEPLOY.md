@@ -104,7 +104,7 @@ volume). The pruning job keeps it bounded, so it stays small.
 
 **Backups are automatic.** `docker compose up` starts a `backup` sidecar that
 writes a consistent snapshot to **`backups/`** once a day and keeps the most
-recent `[backup].keep` (default 7), deleting older ones. It uses SQLite's online
+recent `[backup].keep` (default 30), deleting older ones. It uses SQLite's online
 backup, so the bot keeps serving during a snapshot — no downtime, no manual
 `cp`, no host cron. Snapshots are named `enfilera-YYYYMMDD-HHMMSS.db`:
 
@@ -120,14 +120,55 @@ docker compose run --rm backup python -m enfilera.backup
 ```
 
 **Copy the snapshots off the Pi.** An SD card is a single point of failure, so
-on-Pi snapshots alone are not enough. Pull `backups/` to another machine on a
-schedule — nothing to install on the Pi. From that other machine:
+on-Pi snapshots alone are not enough. Pull `backups/` to another machine you
+control — nothing to install on the Pi. From that other machine:
 
 ```bash
-rsync -az pi@raspberrypi.local:enfilera/backups/ ./enfilera-backups/
+rsync -az --exclude=.gitkeep \
+  pi@raspberrypi.local:enfilera/backups/ ~/enfilera-backups/
 ```
 
-(or `scp`; drop it in that machine's crontab.)
+Deliberately **no `--delete`**: the copy *accumulates* snapshots and keeps them
+after the Pi rotates them out of its `keep` window, so the off-site archive
+outlives the Pi. Snapshots are tens of KB, so it never meaningfully grows.
+
+**Schedule the pull.** On an always-on host, a cron entry is fine. On a laptop —
+which sleeps through cron's scheduled minute and never runs it — use a systemd
+**user** timer with `Persistent=true`, which runs a missed pull on the next wake.
+Two files under `~/.config/systemd/user/` (replace the host and the paths):
+
+```ini
+# enfilera-pull.service
+[Unit]
+Description=Pull Enfilera DB snapshots off the Pi
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/rsync -az --exclude=.gitkeep -e '/usr/bin/ssh -o BatchMode=yes -o ConnectTimeout=10' pi@raspberrypi.local:enfilera/backups/ %h/enfilera-backups/
+```
+
+```ini
+# enfilera-pull.timer
+[Unit]
+Description=Pull Enfilera backups periodically
+
+[Timer]
+OnCalendar=*-*-* 00/6:17:00
+Persistent=true
+RandomizedDelaySec=120
+
+[Install]
+WantedBy=timers.target
+```
+
+```bash
+systemctl --user enable --now enfilera-pull.timer
+loginctl enable-linger "$USER"   # keep the timer running while logged out
+```
+
+The SSH key must be passphrase-free (or agent-backed) so the pull runs headless.
 
 **Restore:** stop the bot, copy a chosen snapshot over the live DB, start again.
 
