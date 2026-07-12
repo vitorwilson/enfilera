@@ -6,6 +6,16 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+- Raised the single-sample validity ceiling (`clamp_max_minutes`) from 60 to
+  120 minutes. Peak-rush waits were observed running past an hour and were
+  being rejected as implausible, so genuine data was silently discarded and
+  estimates biased low; a 2h ceiling admits them while still rejecting the
+  physically impossible. This is the value clamp only — it is independent of
+  `block_minutes` (the time-of-day bucketing), which is unchanged. Forks
+  inherit the new default via `config.example.toml`; an existing install must
+  update its own gitignored `config/config.toml` and redeploy.
+
 ## [0.2.3] - 2026-07-04
 
 ### Added

@@ -27,7 +27,7 @@ def test_build_config_assembles_every_section() -> None:
     assert len(config.lines) == 3
     assert config.geofence.radius_m == 50
     assert config.estimation.min_samples == 3
-    assert config.estimation.clamp_max == 3600  # 60 min → seconds
+    assert config.estimation.clamp_max == 7200  # 120 min → seconds
     assert config.retention_days == 30
     assert config.backup_keep == 30
     assert str(config.schedule.timezone) == "America/Sao_Paulo"

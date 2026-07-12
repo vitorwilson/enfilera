@@ -48,8 +48,9 @@ operational summary:
 4. **Sample validity pipeline (in order):**
    - Discard anything **< 1 minute** (given).
    - **Physical clamp** to a plausible transit band (lower bound 1 min, upper
-     bound a configurable hard ceiling, e.g. ~60 min — a real lunch rush can
-     take ~30 min, so the ceiling must sit well above that). The ceiling is
+     bound a configurable hard ceiling, e.g. ~2h — observed peak-rush waits can
+     run past an hour, so the ceiling must admit them rather than discard real
+     data, while still rejecting the physically implausible). The ceiling is
      the single highest-leverage poison defense after the geofence.
    - **Relative outlier rejection** against the **historical baseline** for
      that (queue, weekday, block), widened by a margin (e.g. ±k·MAD). The
