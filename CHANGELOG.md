@@ -6,6 +6,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.2.4] - 2026-07-12
+
 ### Changed
 - Raised the single-sample validity ceiling (`clamp_max_minutes`) from 60 to
   120 minutes. Peak-rush waits were observed running past an hour and were
