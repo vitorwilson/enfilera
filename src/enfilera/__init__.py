@@ -5,4 +5,4 @@ the bot turns those anonymous transit times into a single live estimate per
 line so the next person knows whether to go now or come back later.
 """
 
-__version__ = "0.2.4"
+__version__ = "0.2.5"

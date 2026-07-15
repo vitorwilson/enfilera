@@ -6,6 +6,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.2.5] - 2026-07-15
+
 ### Changed
 - The "how's the line" reply (`/agora`) now shows **"sem registro"** when no
   real data backs a line's estimate — no admitted samples today, no previous
