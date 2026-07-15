@@ -67,9 +67,7 @@ class Clock:
 
 
 def _config() -> EstimationConfig:
-    return EstimationConfig(
-        min_samples=3, default_seed=60, clamp_min=60, clamp_max=3600, mad_k=3.0
-    )
+    return EstimationConfig(min_samples=3, clamp_min=60, clamp_max=3600, mad_k=3.0)
 
 
 def _timer(conn: sqlite3.Connection, clock: Clock) -> RegisterTimer:
@@ -269,7 +267,9 @@ def test_confirm_rejects_too_short(memory_db: sqlite3.Connection) -> None:
     _run(timer.stop(_cmd(), context))
     confirm = _decision("timer:confirm")
     _run(timer.on_decision(confirm, context))
-    assert "curto" in confirm.callback_query.edits[-1]
+    reject = confirm.callback_query.edits[-1]
+    assert "curto" in reject
+    assert "mínimo 1 min" in reject  # named from config.clamp_min, not hardcoded
     assert _samples(memory_db) == []
 
 

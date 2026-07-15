@@ -14,7 +14,6 @@ from enfilera.validity import Baseline, admit_samples, compute_baseline
 def _config(**overrides: object) -> EstimationConfig:
     defaults = {
         "min_samples": 3,
-        "default_seed": 60,
         "clamp_min": 60,
         "clamp_max": 3600,
         "mad_k": 3.0,
@@ -56,6 +55,12 @@ def test_clamp_discards_above_ceiling() -> None:
 
 def test_clamp_boundaries_are_inclusive() -> None:
     assert admit_samples([60, 3600], None, _config()) == [60, 3600]
+
+
+def test_zero_floor_admits_sub_minute_samples() -> None:
+    # With the lower clamp at 0 (line genuinely empty), a sub-minute transit is
+    # real data — no floor to discard it against.
+    assert admit_samples([0, 25, 600], None, _config(clamp_min=0)) == [0, 25, 600]
 
 
 # --- admit_samples: relative outlier rejection ---------------------------

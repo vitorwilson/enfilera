@@ -6,6 +6,30 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+- The "how's the line" reply (`/agora`) now shows **"sem registro"** when no
+  real data backs a line's estimate — no admitted samples today, no previous
+  block, and no historical baseline — and nudges the user to contribute the
+  first sample. Previously it showed the configured seed (`~1 min`), which was
+  indistinguishable from a genuine 1-minute wait (a real one exists in the
+  data) and misled users. The fresh-fork bootstrap now reads "sem registro"
+  everywhere until real samples arrive.
+- The lower physical clamp (`clamp_min_minutes`) may now be **0**, and the
+  shipped `config.example.toml` default is 0. When a line genuinely empties
+  out, a sub-minute transit is real data; the previous 1-minute floor silently
+  discarded it. The too-short rejection message now names the *configured*
+  minimum instead of a hardcoded "1 minuto", so a fork that raises the floor
+  shows its own value. Forks inherit the new default via `config.example.toml`;
+  an existing install that wants it must set `clamp_min_minutes = 0` in its own
+  gitignored `config/config.toml` and redeploy.
+
+### Removed
+- The `default_seed_minutes` estimation setting — there is no fabricated seed
+  anymore (see "sem registro" above), so the key is obsolete. An existing
+  `config/config.toml` that still lists it keeps loading (the key is ignored);
+  delete the line when convenient. To adopt the empty-line behaviour, also set
+  `clamp_min_minutes = 0` and redeploy.
+
 ## [0.2.4] - 2026-07-12
 
 ### Changed

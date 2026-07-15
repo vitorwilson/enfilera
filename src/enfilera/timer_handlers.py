@@ -41,7 +41,7 @@ from telegram.ext import (
 )
 
 from enfilera.estimate import format_estimate
-from enfilera.estimation_config import EstimationConfig
+from enfilera.estimation_config import SECONDS_PER_MINUTE, EstimationConfig
 from enfilera.geofence import Geofence, within_radius
 from enfilera.lines import Line
 from enfilera.messages import NO_LINE, closed_message
@@ -68,7 +68,6 @@ _STARTED = "Cronômetro iniciado! Toque em /parar quando passar pela catraca."
 _NO_TIMER = "Você não tem um cronômetro ativo. Use /registrar para começar."
 _RESUMED = "Cronômetro retomado. Toque em /parar quando passar pela catraca."
 _NOTHING_PENDING = "Não há nada para confirmar."
-_TOO_SHORT = "Tempo muito curto (mínimo 1 minuto) — não registrado."
 _TOO_LONG = "Tempo muito longo para ser real — não registrado."
 
 
@@ -100,9 +99,18 @@ def confirmation(seconds: int) -> str:
     return f"Tempo registrado: {format_estimate(seconds)}. Obrigado por contribuir!"
 
 
-def _rejection(verdict: ElapsedVerdict) -> str:
-    """The message for a clamp-rejected transit (already not ACCEPTED)."""
-    return _TOO_SHORT if verdict is ElapsedVerdict.TOO_SHORT else _TOO_LONG
+def _rejection(verdict: ElapsedVerdict, clamp_min_seconds: int) -> str:
+    """The message for a clamp-rejected transit (already not ACCEPTED).
+
+    The too-short text names the *configured* floor rather than a hardcoded
+    "1 minuto": with ``clamp_min_minutes = 0`` (empty-line installs) the floor
+    is 0 and this branch never fires, but a fork that raises the floor must see
+    its own minimum, not a stale constant.
+    """
+    if verdict is ElapsedVerdict.TOO_SHORT:
+        minutes = clamp_min_seconds // SECONDS_PER_MINUTE
+        return f"Tempo muito curto (mínimo {minutes} min) — não registrado."
+    return _TOO_LONG
 
 
 class RegisterTimer:
@@ -211,7 +219,7 @@ class RegisterTimer:
         self._clear_timer(context)
         verdict = classify_elapsed(seconds, self._config)
         if verdict is not ElapsedVerdict.ACCEPTED:
-            await query.edit_message_text(_rejection(verdict))
+            await query.edit_message_text(_rejection(verdict, self._config.clamp_min))
             return
         self._recorder.record(user_id, line_id, start, seconds)
         await query.edit_message_text(confirmation(seconds))

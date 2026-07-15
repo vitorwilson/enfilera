@@ -2,9 +2,11 @@
 
 The orchestration layer (docs/PLAN.md §2.6): admit today's samples, and when
 the block holds enough honest ones, aggregate them robustly. Otherwise walk
-the confidence-fallback chain — previous block today → historical seed →
-configured default — so the bot always has one number to show. The user sees
-it formatted as "~N min".
+the confidence-fallback chain — previous block today → historical seed. When
+nothing real backs the block, the estimate is ``None`` (no record) rather than
+a fabricated number: the bot then says "sem registro" instead of inventing a
+"1 min" the user would read as a genuine wait. A resolved estimate is shown
+formatted as "~N min".
 """
 
 from __future__ import annotations
@@ -46,14 +48,16 @@ def estimate_seconds(
     baseline: Baseline | None,
     previous_block: int | None,
     config: EstimationConfig,
-) -> int:
+) -> int | None:
     """The estimate (seconds) for one bucket, via gating + fallback chain.
 
     ``previous_block`` is the already-resolved estimate of the prior block
     today (``None`` at a period's first block); ``baseline`` is the
     *historical* reference for this bucket (``None`` with too little history).
     When today's admitted samples reach ``min_samples`` they win; otherwise:
-    previous block → historical seed (baseline center) → configured default.
+    previous block → historical seed (baseline center). Returns ``None`` when
+    nothing real backs the block — no admitted samples, no previous block, no
+    baseline — so the caller shows "sem registro" instead of a made-up number.
     """
     admitted = admit_samples(today, baseline, config)
     if len(admitted) >= config.min_samples:
@@ -62,7 +66,7 @@ def estimate_seconds(
         return previous_block
     if baseline is not None:
         return round(baseline.center)
-    return config.default_seed
+    return None
 
 
 def format_estimate(seconds: int) -> str:

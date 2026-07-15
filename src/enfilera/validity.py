@@ -53,7 +53,7 @@ def compute_baseline(
     back to clamp-only admission rather than rejecting against noise.
 
     >>> from enfilera.estimation_config import EstimationConfig
-    >>> cfg = EstimationConfig(3, 60, 60, 3600, 3.0)
+    >>> cfg = EstimationConfig(3, 60, 3600, 3.0)
     >>> compute_baseline([600, 660, 720], cfg)
     Baseline(center=660, spread=60)
     """
@@ -73,7 +73,7 @@ def admit_samples(
     still rejects absurd values (the MAD = 0 guard).
 
     >>> from enfilera.estimation_config import EstimationConfig
-    >>> cfg = EstimationConfig(3, 60, 60, 3600, 3.0)
+    >>> cfg = EstimationConfig(3, 60, 3600, 3.0)
     >>> admit_samples([30, 600, 660, 720, 5000], Baseline(660, 60), cfg)
     [600, 660, 720]
     """

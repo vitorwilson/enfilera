@@ -7,7 +7,12 @@ would accept ``True`` as a count.
 
 import pytest
 
-from enfilera.config_parsing import positive_int, positive_number, section
+from enfilera.config_parsing import (
+    non_negative_int,
+    positive_int,
+    positive_number,
+    section,
+)
 
 # --- section -------------------------------------------------------------
 
@@ -49,6 +54,30 @@ def test_positive_int_rejects_bool() -> None:
 def test_positive_int_rejects_float() -> None:
     with pytest.raises(ValueError, match="min_samples"):
         positive_int(3.0, "min_samples")
+
+
+# --- non_negative_int ----------------------------------------------------
+
+
+@pytest.mark.parametrize("ok", [0, 1, 90])
+def test_non_negative_int_accepts_zero_and_positive(ok: int) -> None:
+    # 0 is the point: a zero-minute clamp floor keeps genuine empty-line waits.
+    assert non_negative_int(ok, "clamp_min_minutes") == ok
+
+
+def test_non_negative_int_rejects_negative() -> None:
+    with pytest.raises(ValueError, match="clamp_min_minutes"):
+        non_negative_int(-1, "clamp_min_minutes")
+
+
+def test_non_negative_int_rejects_bool() -> None:
+    with pytest.raises(ValueError, match="clamp_min_minutes"):
+        non_negative_int(True, "clamp_min_minutes")
+
+
+def test_non_negative_int_rejects_float() -> None:
+    with pytest.raises(ValueError, match="clamp_min_minutes"):
+        non_negative_int(0.0, "clamp_min_minutes")
 
 
 # --- positive_number -----------------------------------------------------

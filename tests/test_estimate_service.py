@@ -21,9 +21,7 @@ RETENTION = 30
 
 
 def _config() -> EstimationConfig:
-    return EstimationConfig(
-        min_samples=3, default_seed=60, clamp_min=60, clamp_max=3600, mad_k=3.0
-    )
+    return EstimationConfig(min_samples=3, clamp_min=60, clamp_max=3600, mad_k=3.0)
 
 
 def _service(conn: sqlite3.Connection) -> tuple[EstimationService, SampleStore]:
@@ -70,11 +68,13 @@ def test_first_block_sparse_falls_back_to_historical_seed(
     assert service.current_estimate(_sp(2026, 6, 30, 10, 45), "card") == 660
 
 
-def test_no_data_anywhere_returns_default_seed(
+def test_no_data_anywhere_returns_none(
     memory_db: sqlite3.Connection,
 ) -> None:
+    # Open, but no samples today and no history: no record to show. Distinct
+    # from the closed case above (also None) only by the caller's openness check.
     service, _ = _service(memory_db)
-    assert service.current_estimate(_sp(2026, 6, 30, 10, 45), "card") == 60
+    assert service.current_estimate(_sp(2026, 6, 30, 10, 45), "card") is None
 
 
 def test_historical_baseline_excludes_today(memory_db: sqlite3.Connection) -> None:

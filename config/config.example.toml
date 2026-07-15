@@ -71,18 +71,20 @@ label = "Pix"
 
 [estimation]
 # Minimum honest samples in today's block before its live estimate is trusted.
-# Below this: previous block today -> historical seed -> default_seed_minutes.
+# Below this: previous block today -> historical seed. With none of those (no
+# data anywhere yet, e.g. a fresh fork) the bot shows "sem registro" and asks
+# the user to contribute the first sample — never a fabricated number.
 min_samples = 3
-# Value shown for any (line, block) before any data exists, in minutes. Also
-# the fresh-fork bootstrap: a brand-new install shows this everywhere.
-default_seed_minutes = 1
 # Physical clamp band for a single transit sample, in minutes. Samples below
 # the lower bound are discarded; samples above the upper bound are rejected.
+# The lower bound is 0 by default: when the line genuinely empties out, a
+# sub-minute transit is real data, not noise, and a 1-minute floor would throw
+# it away. Raise it only if your line can never truly be empty.
 # Observed peak-rush waits can run past an hour, so the ceiling sits at 2h to
 # admit them instead of silently throwing real data away. It is still the
 # highest-leverage poison defense after the geofence, not a cap on normal
 # waits — set it to the longest wait that is physically plausible, no higher.
-clamp_min_minutes = 1
+clamp_min_minutes = 0
 clamp_max_minutes = 120
 # Relative outlier rejection width: keep samples within k·MAD of the
 # HISTORICAL baseline for that (line, weekday, block).

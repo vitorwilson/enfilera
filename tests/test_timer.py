@@ -13,7 +13,6 @@ START = datetime(2026, 6, 30, 12, 0, tzinfo=UTC)
 def _config(**overrides: object) -> EstimationConfig:
     defaults = {
         "min_samples": 3,
-        "default_seed": 60,
         "clamp_min": 60,
         "clamp_max": 3600,
         "mad_k": 3.0,
@@ -60,3 +59,11 @@ def test_at_ceiling_is_accepted() -> None:
 
 def test_above_ceiling_is_too_long() -> None:
     assert classify_elapsed(3601, _config()) == ElapsedVerdict.TOO_LONG
+
+
+def test_zero_floor_accepts_instant_transit() -> None:
+    # With the lower clamp at 0 (line genuinely empty), a sub-minute transit is
+    # real data, not "too short" — nothing below the floor to discard.
+    zero_floor = _config(clamp_min=0)
+    assert classify_elapsed(0, zero_floor) == ElapsedVerdict.ACCEPTED
+    assert classify_elapsed(25, zero_floor) == ElapsedVerdict.ACCEPTED

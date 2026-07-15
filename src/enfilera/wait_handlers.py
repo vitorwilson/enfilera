@@ -2,10 +2,12 @@
 
 Reads the user's selected line, asks the openness service whether the
 cafeteria is taking timers, and — when open — turns the estimation service's
-number into the single "~N min" line. When shut it shows the closed message,
-naming the closure reason when one was declared. The handler stays thin: the
-open/closed decision and the estimate live in injected services; the messages
-are pure functions.
+number into the single "~N min" line. When open but nothing real backs the
+estimate yet, it says "sem registro" and nudges the user to contribute rather
+than inventing a number. When shut it shows the closed message, naming the
+closure reason when one was declared. The handler stays thin: the open/closed
+decision and the estimate live in injected services; the messages are pure
+functions.
 """
 
 from __future__ import annotations
@@ -29,6 +31,22 @@ COMMAND = "agora"
 def estimate_message(line: Line, seconds: int) -> str:
     """The single user-facing wait line, e.g. 'Pix: ~12 min de espera.'"""
     return f"{line.label}: {format_estimate(seconds)} de espera."
+
+
+def no_record_message(line: Line) -> str:
+    """Shown when no real data backs the line's current estimate.
+
+    Deliberately NOT a "~1 min": a real 1-minute wait exists in the data, so a
+    fabricated seed would be indistinguishable from it. The bot admits it has
+    nothing yet and nudges the user to contribute the first sample.
+
+    >>> no_record_message(Line("pix", "Pix"))
+    'Pix: sem registro ainda — seja o primeiro a cronometrar com /registrar. ⏱️'
+    """
+    return (
+        f"{line.label}: sem registro ainda — "
+        "seja o primeiro a cronometrar com /registrar. ⏱️"
+    )
 
 
 class WaitEstimate:
@@ -65,11 +83,10 @@ class WaitEstimate:
             return
         seconds = self._estimates.current_estimate(now, line.id)
         if seconds is None:
-            # Invariant: open ⇒ inside a period ⇒ an estimate (≥ the seed)
-            # always exists. Surface a loud error (caught by ErrorReporter)
-            # rather than assert, which `python -O` would strip.
-            raise RuntimeError(
-                f"open period yielded no estimate for line {line.id!r} at "
-                f"{now.isoformat()}"
-            )
+            # Open, but nothing real backs the estimate yet (no admitted
+            # samples, no previous block, no historical baseline). Say so
+            # honestly instead of inventing a "~1 min" the user would trust —
+            # see estimate.estimate_seconds.
+            await update.effective_message.reply_text(no_record_message(line))
+            return
         await update.effective_message.reply_text(estimate_message(line, seconds))

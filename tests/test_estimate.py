@@ -1,8 +1,9 @@
 """Tests for the estimate orchestration: gating, aggregation, formatting.
 
 Most of Feature 2's risk lands here, so this is the densest test file. All
-durations are seconds; the default config is min_samples=3, default_seed=60s,
-clamp [60s, 3600s], k=3. The adversarial block at the bottom covers the
+durations are seconds; the default config is min_samples=3, clamp [60s, 3600s],
+k=3. When nothing real backs a block the estimator returns ``None`` (no
+record), never a fabricated number. The adversarial block at the bottom covers the
 threat model from docs/PLAN.md §2–3: minority poison is rejected, but a
 malicious *majority* inside the band is explicitly not survivable (that is
 what the geofence + one-per-period rule exist to prevent).
@@ -22,7 +23,6 @@ from enfilera.validity import Baseline
 def _config(**overrides: object) -> EstimationConfig:
     defaults = {
         "min_samples": 3,
-        "default_seed": 60,
         "clamp_min": 60,
         "clamp_max": 3600,
         "mad_k": 3.0,
@@ -73,13 +73,15 @@ def test_sparse_block_no_previous_falls_back_to_historical_seed() -> None:
     assert estimate == 900
 
 
-def test_sparse_block_no_history_falls_back_to_default_seed() -> None:
-    assert estimate_seconds([600], None, None, _config()) == 60
+def test_sparse_block_no_history_yields_no_record() -> None:
+    # One sample, sub-quorum, no previous block, no baseline: nothing real
+    # backs the block, so there is no record to show (not a fabricated seed).
+    assert estimate_seconds([600], None, None, _config()) is None
 
 
-def test_first_sample_of_day_with_no_history_is_default_seed() -> None:
-    # The fresh-fork bootstrap: nothing anywhere -> the configured default.
-    assert estimate_seconds([], None, None, _config()) == 60
+def test_no_data_anywhere_yields_no_record() -> None:
+    # Fresh fork / empty bucket: nothing anywhere -> no record.
+    assert estimate_seconds([], None, None, _config()) is None
 
 
 def test_previous_block_preferred_over_historical_seed() -> None:
@@ -100,7 +102,7 @@ def test_format_floors_at_one_minute() -> None:
     assert format_estimate(0) == "~1 min"
 
 
-def test_format_default_seed_is_one_minute() -> None:
+def test_format_sixty_seconds_is_one_minute() -> None:
     assert format_estimate(60) == "~1 min"
 
 

@@ -34,6 +34,21 @@ def positive_int(value: object, field: str) -> int:
     return value
 
 
+def non_negative_int(value: object, field: str) -> int:
+    """A non-negative ``int`` (0 allowed), rejecting ``bool`` (since ``True == 1``).
+
+    Distinct from ``positive_int`` for one case: a zero-minute clamp floor.
+    Setting the lower clamp to 0 keeps genuine empty-line waits (sub-minute
+    transits) instead of discarding them as "too short".
+
+    >>> non_negative_int(0, "clamp_min_minutes")
+    0
+    """
+    if not isinstance(value, int) or isinstance(value, bool) or value < 0:
+        raise ValueError(f"{field} must be a non-negative integer, got {value!r}")
+    return value
+
+
 def positive_number(value: object, field: str) -> float:
     """A strictly-positive real (``int`` or ``float``), rejecting ``bool``.
 

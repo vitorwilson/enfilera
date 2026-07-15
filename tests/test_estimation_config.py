@@ -12,7 +12,6 @@ from enfilera.estimation_config import build_estimation_config
 def _raw(**overrides: object) -> dict:
     estimation = {
         "min_samples": 3,
-        "default_seed_minutes": 1,
         "clamp_min_minutes": 1,
         "clamp_max_minutes": 60,
         "mad_k": 3.0,
@@ -28,7 +27,6 @@ def test_parses_and_converts_minutes_to_seconds() -> None:
     config = build_estimation_config(_raw())
 
     assert config.min_samples == 3
-    assert config.default_seed == 60
     assert config.clamp_min == 60
     assert config.clamp_max == 3600
     assert config.mad_k == 3.0
@@ -66,6 +64,12 @@ def test_rejects_non_positive_mad_k() -> None:
         build_estimation_config(_raw(mad_k=0))
 
 
-def test_rejects_zero_clamp_min() -> None:
+def test_accepts_zero_clamp_min() -> None:
+    # A zero-minute lower clamp keeps genuine empty-line waits (sub-minute
+    # transits) instead of discarding them as "too short".
+    assert build_estimation_config(_raw(clamp_min_minutes=0)).clamp_min == 0
+
+
+def test_rejects_negative_clamp_min() -> None:
     with pytest.raises(ValueError, match="clamp_min_minutes"):
-        build_estimation_config(_raw(clamp_min_minutes=0))
+        build_estimation_config(_raw(clamp_min_minutes=-1))

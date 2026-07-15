@@ -14,7 +14,6 @@ from datetime import date, datetime, time
 from typing import Any
 from zoneinfo import ZoneInfo
 
-import pytest
 from schedules import make_schedule as _schedule
 from telegram.ext import ApplicationBuilder, CommandHandler
 from telegram_fakes import FakeMessage, FakeUpdate, FakeUser
@@ -41,9 +40,7 @@ def _run(coro: Coroutine[Any, Any, None]) -> None:
 
 
 def _config() -> EstimationConfig:
-    return EstimationConfig(
-        min_samples=3, default_seed=60, clamp_min=60, clamp_max=3600, mad_k=3.0
-    )
+    return EstimationConfig(min_samples=3, clamp_min=60, clamp_max=3600, mad_k=3.0)
 
 
 def _handler(conn: sqlite3.Connection, now: datetime = LUNCH) -> WaitEstimate:
@@ -71,11 +68,13 @@ def test_stale_line_prompts_selection(memory_db: sqlite3.Connection) -> None:
     assert "/fila" in _ask(_handler(memory_db))
 
 
-def test_open_with_no_samples_shows_default_seed(memory_db: sqlite3.Connection) -> None:
+def test_open_with_no_samples_shows_no_record(memory_db: sqlite3.Connection) -> None:
     LinePreferenceStore(memory_db).set_line(USER, "card")
     text = _ask(_handler(memory_db))
     assert "Cartão" in text
-    assert "~1 min" in text  # default_seed = 60s
+    assert "sem registro" in text
+    assert "/registrar" in text  # actionable nudge to contribute the first sample
+    assert "~" not in text  # no fabricated "~N min" — nothing real backs it yet
 
 
 def test_open_shows_robust_estimate(memory_db: sqlite3.Connection) -> None:
@@ -101,17 +100,17 @@ def test_closed_names_the_closure_reason(memory_db: sqlite3.Connection) -> None:
 
 
 class _NoEstimateService:
-    """Estimation stub returning no number, to exercise the open-but-None case."""
+    """Estimation stub returning no number, to exercise the open-but-no-record case."""
 
     def current_estimate(self, now: datetime, line_id: str) -> int | None:
         return None
 
 
-def test_open_but_no_estimate_raises_instead_of_asserting(
+def test_open_but_no_record_shows_the_no_record_message(
     memory_db: sqlite3.Connection,
 ) -> None:
-    # The invariant (open ⇒ an estimate exists) is surfaced as a real error so
-    # it survives `python -O`, where an assert would be stripped.
+    # Open, but the estimator has nothing real to show. The handler says "sem
+    # registro" and nudges the user, rather than inventing a number.
     LinePreferenceStore(memory_db).set_line(USER, "card")
     schedule = _schedule()
     openness = OpennessService(schedule, ClosureStore(memory_db), HaltFlag(memory_db))
@@ -122,9 +121,10 @@ def test_open_but_no_estimate_raises_instead_of_asserting(
         _NoEstimateService(),
         lambda: LUNCH,
     )
-    update = FakeUpdate(effective_message=FakeMessage(), effective_user=FakeUser(USER))
-    with pytest.raises(RuntimeError, match="no estimate"):
-        _run(handler.show(update, None))
+    message = FakeMessage()
+    update = FakeUpdate(effective_message=message, effective_user=FakeUser(USER))
+    _run(handler.show(update, None))
+    assert "sem registro" in message.replies[0][0]
 
 
 def test_register_adds_command_handler(memory_db: sqlite3.Connection) -> None:

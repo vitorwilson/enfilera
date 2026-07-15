@@ -46,12 +46,13 @@ operational summary:
    samples older than the window. Tuesdays-at-noon and Fridays-at-noon are
    distinct buckets.
 4. **Sample validity pipeline (in order):**
-   - Discard anything **< 1 minute** (given).
-   - **Physical clamp** to a plausible transit band (lower bound 1 min, upper
-     bound a configurable hard ceiling, e.g. ~2h — observed peak-rush waits can
-     run past an hour, so the ceiling must admit them rather than discard real
-     data, while still rejecting the physically implausible). The ceiling is
-     the single highest-leverage poison defense after the geofence.
+   - **Physical clamp** to a plausible transit band: a configurable lower
+     floor (**default 0** — when a line genuinely empties out a sub-minute
+     transit is real data, kept, not discarded) and a configurable upper hard
+     ceiling (e.g. ~2h — observed peak-rush waits can run past an hour, so the
+     ceiling must admit them rather than discard real data, while still
+     rejecting the physically implausible). The ceiling is the single
+     highest-leverage poison defense after the geofence.
    - **Relative outlier rejection** against the **historical baseline** for
      that (queue, weekday, block), widened by a margin (e.g. ±k·MAD). The
      reference is the *stable historical* expectation, **never today's
@@ -63,10 +64,13 @@ operational summary:
 6. **Confidence gating:** below N_MIN (≈3) samples in today's block, show the
    **previous block's value**, falling back to the **historical baseline
    seed** for that (queue, weekday, block) if no previous block exists today.
-7. **Default seed:** every (line, block) defaults to a configurable value
-   (**1 min** by default) before any data exists. This is also the
-   fresh-fork bootstrap: a brand-new install shows 1 min everywhere until
-   real samples arrive.
+7. **No record:** when nothing real backs a (line, block) — no admitted
+   samples today, no previous block, no historical baseline — the bot shows
+   **"sem registro"** and nudges the user to contribute the first sample,
+   never a fabricated number. WHY: a genuine 1-minute wait exists in the data,
+   so a made-up "1 min" seed would be indistinguishable from it and mislead.
+   This is also the fresh-fork bootstrap: a brand-new install says "sem
+   registro" everywhere until real samples arrive.
 
 ## 3. Anti-abuse decisions (locked)
 
@@ -93,7 +97,7 @@ Two layers, deliberately separated:
 
 - **Static config file** (one file a forker edits once): queues/lines,
   operating periods, block size, geofence center + radius, retention window,
-  per-(line,block) default seed, validity band parameters, admin allowlist
+  validity band parameters, admin allowlist
   (Telegram user IDs), bot token reference. Token itself comes from the
   environment / secrets, **not** committed.
 - **Dynamic operational state in the database** (survives restart, changed
@@ -176,13 +180,13 @@ server-obtained time.**
 The statistical heart. No I/O; takes samples + baseline, returns a number.
 This is where most test lines live.
 
-- [x] Validity pipeline: `< 1 min` discard → physical clamp → relative
-      outlier rejection vs **historical baseline** (±k·MAD), with the
+- [x] Validity pipeline: physical clamp (configurable floor, default 0) →
+      relative outlier rejection vs **historical baseline** (±k·MAD), with the
       documented guard against anchoring on today's empty live data.
 - [x] Robust aggregate: median (small n) / 20% trimmed mean (larger n);
       MAD-based rejection guarded for MAD = 0 and tiny n.
 - [x] Confidence gating: N_MIN threshold → previous-block → historical seed →
-      configured default (1 min).
+      "sem registro" (no fabricated default).
 - [x] Baseline computation from the rolling raw samples for
       (queue, weekday, block).
 - [x] Output formatting to a single rounded number ("~N min").
@@ -219,8 +223,9 @@ in the core.
 - [x] **"How's the line today?"** → show current estimate(s) per the user's
       line, or the closed message when shut.
 - [x] **"Register time"** timer: start (geofence-checked) → stop at turnstile,
-      with confirm/resume; submit only if ≥ 1 min, within geofence, and not
-      already submitted this period; otherwise the action is rejected with a
+      with confirm/resume; submit only if within the physical clamp band,
+      within geofence, and not already submitted this period; otherwise the
+      action is rejected with a
       clear reason. Confirm/resume guards a *premature* stop: a plausible-but-
       early value (10 min when it was 20) passes the clamp, so on /parar the
       bot shows the elapsed and lets the user resume the original timer instead

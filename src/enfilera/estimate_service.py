@@ -46,10 +46,14 @@ class EstimationService:
         self._retention_days = retention_days
 
     def current_estimate(self, now: datetime, line_id: str) -> int | None:
-        """Estimate (seconds) for ``line_id`` at ``now``, or ``None`` if closed.
+        """Estimate (seconds) for ``line_id`` at ``now``, or ``None``.
 
-        ``None`` means ``now`` falls outside every operating period; the caller
-        already knows the open/closed status and shows the closed message.
+        ``None`` means there is no estimate to show. Two disjoint causes,
+        distinguished by the caller's prior openness check: ``now`` is outside
+        every operating period (closed), or the whole period-so-far is backed
+        by no real data (no record). The ``/agora`` handler checks openness
+        first, so a ``None`` it receives is always the no-record case and it
+        shows "sem registro".
         """
         local = now.astimezone(self._schedule.timezone)
         period = period_containing(local.time(), self._schedule)
@@ -74,7 +78,7 @@ class EstimationService:
         block: Block,
         today_start: datetime,
         previous: int | None,
-    ) -> int:
+    ) -> int | None:
         history_since = today_start - timedelta(days=self._retention_days)
         historical = self._samples.values_in_window(
             line_id, weekday, block.start, history_since, until=today_start
