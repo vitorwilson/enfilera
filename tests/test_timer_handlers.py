@@ -207,7 +207,16 @@ def _decision(data: str) -> FakeUpdate:
 
 
 def _samples(conn: sqlite3.Connection) -> list[int]:
-    return SampleStore(conn).values_in_window("card", 2, time(12, 0), MIDNIGHT)
+    return _samples_for(conn, "card")
+
+
+def _samples_for(conn: sqlite3.Connection, line_id: str) -> list[int]:
+    return SampleStore(conn).values_in_window(line_id, 2, time(12, 0), MIDNIGHT)
+
+
+def _callback_data(markup: InlineKeyboardMarkup) -> list[str]:
+    """Every button's callback_data, flattened across the keyboard's rows."""
+    return [button.callback_data for row in markup.inline_keyboard for button in row]
 
 
 def test_stop_asks_to_confirm_without_recording_yet(
@@ -288,6 +297,111 @@ def test_stop_without_active_timer(memory_db: sqlite3.Connection) -> None:
     stop = _cmd()
     _run(_timer(memory_db, Clock(START)).stop(stop, FakeContext()))
     assert "não tem um cronômetro" in _last_reply(stop)
+
+
+# --- line naming + trocar de fila -----------------------------------------
+
+
+def test_started_message_names_the_picked_line(
+    memory_db: sqlite3.Connection,
+) -> None:
+    # The user must see which line the running timer is attributed to, so a
+    # wrong default is caught before /parar (feedback: "Cronômetro Iniciado"
+    # should show the line picked).
+    _pick_card(memory_db)
+    context = FakeContext()
+    timer = _timer(memory_db, Clock(START))
+    _run(timer.start(_cmd(), context))
+    loc = _location(*CENTER)
+    _run(timer.on_location(loc, context))
+    text = _last_reply(loc)
+    assert "Cronômetro iniciado" in text
+    assert "Cartão" in text
+
+
+def test_confirm_prompt_names_the_line(memory_db: sqlite3.Connection) -> None:
+    clock = Clock(START)
+    timer, context = _started(memory_db, clock)
+    clock.now = START + timedelta(minutes=12)
+    stop = _cmd()
+    _run(timer.stop(stop, context))
+    text = _last_reply(stop)
+    assert "~12 min" in text
+    assert "Cartão" in text  # the line the sample is about
+
+
+def test_switch_shows_the_line_picker(memory_db: sqlite3.Connection) -> None:
+    clock = Clock(START)
+    timer, context = _started(memory_db, clock)
+    clock.now = START + timedelta(minutes=12)
+    _run(timer.stop(_cmd(), context))
+    switch = _decision("timer:switch")
+    _run(timer.on_decision(switch, context))
+    markup = switch.callback_query.edit_markups[-1]
+    assert isinstance(markup, InlineKeyboardMarkup)
+    assert _callback_data(markup) == ["timer:line:card", "timer:line:pix"]
+    assert context.user_data["pending_seconds"] == 720  # not recorded, not lost
+
+
+def test_switch_reattributes_pending_and_reshows_confirm(
+    memory_db: sqlite3.Connection,
+) -> None:
+    clock = Clock(START)
+    timer, context = _started(memory_db, clock)
+    clock.now = START + timedelta(minutes=12)
+    _run(timer.stop(_cmd(), context))
+    _run(timer.on_decision(_decision("timer:switch"), context))
+    picked = _decision("timer:line:pix")
+    _run(timer.on_decision(picked, context))
+    assert context.user_data["timer_line"] == "pix"
+    text = picked.callback_query.edits[-1]
+    assert "~12 min" in text
+    assert "Pix" in text
+    # The confirm choice is offered again so the user still commits explicitly.
+    markup = picked.callback_query.edit_markups[-1]
+    assert isinstance(markup, InlineKeyboardMarkup)
+    assert "timer:confirm" in _callback_data(markup)
+
+
+def test_confirm_after_switch_records_to_the_new_line(
+    memory_db: sqlite3.Connection,
+) -> None:
+    clock = Clock(START)
+    timer, context = _started(memory_db, clock)  # started on "card"
+    clock.now = START + timedelta(minutes=12)
+    _run(timer.stop(_cmd(), context))
+    _run(timer.on_decision(_decision("timer:switch"), context))
+    _run(timer.on_decision(_decision("timer:line:pix"), context))
+    _run(timer.on_decision(_decision("timer:confirm"), context))
+    assert _samples_for(memory_db, "pix") == [720]
+    assert _samples_for(memory_db, "card") == []  # not the original line
+
+
+def test_switch_does_not_change_saved_line_preference(
+    memory_db: sqlite3.Connection,
+) -> None:
+    # Trocar de fila re-attributes only the current registration; the user's
+    # tracked /fila line is a separate setting and must stay put.
+    clock = Clock(START)
+    timer, context = _started(memory_db, clock)  # preference is "card"
+    clock.now = START + timedelta(minutes=12)
+    _run(timer.stop(_cmd(), context))
+    _run(timer.on_decision(_decision("timer:switch"), context))
+    _run(timer.on_decision(_decision("timer:line:pix"), context))
+    _run(timer.on_decision(_decision("timer:confirm"), context))
+    assert LinePreferenceStore(memory_db).get_line(USER) == "card"
+
+
+def test_decision_keyboard_offers_confirm_resume_and_switch(
+    memory_db: sqlite3.Connection,
+) -> None:
+    clock = Clock(START)
+    timer, context = _started(memory_db, clock)
+    clock.now = START + timedelta(minutes=12)
+    stop = _cmd()
+    _run(timer.stop(stop, context))
+    markup = stop.effective_message.replies[-1][1]
+    assert _callback_data(markup) == ["timer:confirm", "timer:resume", "timer:switch"]
 
 
 def test_register_adds_start_stop_location_and_decision_handlers(

@@ -6,6 +6,17 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- On `/parar`, a **"Trocar de fila"** option lets a user re-attribute the
+  measured wait to a different line before confirming — useful when their
+  default `/fila` line was not the one they actually waited in today. It
+  changes only that registration; the saved `/fila` preference is untouched.
+  The confirm choice is offered again after the switch so the wait is still
+  committed explicitly.
+- The running line is now named in the "Cronômetro iniciado" start notice and
+  in the `/parar` confirm prompt, so a wrong default line is caught before the
+  sample is recorded (and the "Trocar de fila" switch is visible when used).
+
 ## [0.2.5] - 2026-07-15
 
 ### Changed

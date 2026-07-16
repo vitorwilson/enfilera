@@ -8,10 +8,14 @@ The flow that turns a student's queue wait into a sample:
    geofence the timer starts (queue-join instant); the coordinates are read
    for the radius test and then dropped — never stored (docs/PLAN.md §3).
 3. ``/parar`` measures the elapsed transit from two server timestamps and shows
-   it with a confirm / resume choice. Confirm applies the physical clamp and
-   records the sample; resume keeps the *original* timer running. This guards a
-   premature stop: a plausible-but-early value (10 min when it was 20) passes
-   the clamp, so the user must confirm it is the real turnstile moment.
+   it with a confirm / resume / switch-line choice. Confirm applies the physical
+   clamp and records the sample; resume keeps the *original* timer running;
+   switch re-attributes the pending measurement to a different line before
+   confirming (e.g. the user's default line was not the one they waited in
+   today). Resume guards a premature stop: a plausible-but-early value (10 min
+   when it was 20) passes the clamp, so the user must confirm it is the real
+   turnstile moment. The switch changes only *this* registration — it does not
+   touch the user's saved ``/fila`` preference.
 
 Per-user flow state (start instant, line, pending elapsed) lives in
 ``context.user_data``; all gating is in injected services, so this handler
@@ -43,7 +47,7 @@ from telegram.ext import (
 from enfilera.estimate import format_estimate
 from enfilera.estimation_config import SECONDS_PER_MINUTE, EstimationConfig
 from enfilera.geofence import Geofence, within_radius
-from enfilera.lines import Line
+from enfilera.lines import Line, find_line
 from enfilera.messages import NO_LINE, closed_message
 from enfilera.openness_service import OpennessService
 from enfilera.preferences_store import LinePreferenceStore, chosen_line
@@ -55,6 +59,10 @@ STOP_COMMAND = "parar"
 DECISION_PATTERN = r"^timer:"
 _CONFIRM = "timer:confirm"
 _RESUME = "timer:resume"
+_SWITCH = "timer:switch"
+# A line-switch tap; the id rides after the prefix. Namespaced under "timer:"
+# so the same CallbackQueryHandler owns it and it never collides with /fila.
+_LINE_PREFIX = "timer:line:"
 
 _START_PROMPT = (
     "Compartilhe sua localização para começar o cronômetro.\n\n"
@@ -64,11 +72,37 @@ _START_PROMPT = (
 _OUTSIDE = "Você precisa estar no restaurante para começar."
 _ALREADY = "Você já registrou um tempo neste período. Volte no próximo."
 _NEED_START = "Use /registrar para começar antes de enviar a localização."
-_STARTED = "Cronômetro iniciado! Toque em /parar quando passar pela catraca."
 _NO_TIMER = "Você não tem um cronômetro ativo. Use /registrar para começar."
-_RESUMED = "Cronômetro retomado. Toque em /parar quando passar pela catraca."
 _NOTHING_PENDING = "Não há nada para confirmar."
 _TOO_LONG = "Tempo muito longo para ser real — não registrado."
+_SWITCH_PROMPT = "Para qual fila vale este tempo?"
+_SWITCH_GONE = "Essa fila não existe mais. Escolha outra:"
+
+
+def started_message(line_label: str) -> str:
+    """Timer-started notice naming the line the sample will be attributed to.
+
+    The line is shown so a wrong default is caught now, not after /parar.
+
+    >>> started_message("Pix")
+    'Cronômetro iniciado na fila Pix! Toque em /parar quando passar pela catraca.'
+    """
+    return (
+        f"Cronômetro iniciado na fila {line_label}! "
+        "Toque em /parar quando passar pela catraca."
+    )
+
+
+def resumed_message(line_label: str) -> str:
+    """Resume notice, naming the line the still-running timer is attributed to.
+
+    >>> resumed_message("Pix")
+    'Cronômetro retomado na fila Pix. Toque em /parar quando passar pela catraca.'
+    >>> resumed_message("")
+    'Cronômetro retomado. Toque em /parar quando passar pela catraca.'
+    """
+    where = f" na fila {line_label}" if line_label else ""
+    return f"Cronômetro retomado{where}. Toque em /parar quando passar pela catraca."
 
 
 def location_request_keyboard() -> ReplyKeyboardMarkup:
@@ -78,20 +112,58 @@ def location_request_keyboard() -> ReplyKeyboardMarkup:
 
 
 def decision_keyboard() -> InlineKeyboardMarkup:
-    """Confirm-or-resume choice shown when the user stops the timer."""
+    """Confirm / resume / switch-line choice shown when the user stops."""
     return InlineKeyboardMarkup(
         [
             [
                 InlineKeyboardButton("✅ Confirmar", callback_data=_CONFIRM),
                 InlineKeyboardButton("⏳ Ainda na fila", callback_data=_RESUME),
-            ]
+            ],
+            [InlineKeyboardButton("🔀 Trocar de fila", callback_data=_SWITCH)],
         ]
     )
 
 
-def confirm_prompt(seconds: int) -> str:
-    """Ask the user to confirm the measured wait before it is recorded."""
-    return f"Você esperou {format_estimate(seconds)}. Confirmar o registro?"
+def encode_switch_line(line_id: str) -> str:
+    """Callback data re-attributing the pending sample to ``line_id``.
+
+    >>> encode_switch_line("pix")
+    'timer:line:pix'
+    """
+    return f"{_LINE_PREFIX}{line_id}"
+
+
+def decode_switch_line(data: str) -> str | None:
+    """The line id in a switch tap, or ``None`` if ``data`` isn't one.
+
+    >>> decode_switch_line("timer:line:pix")
+    'pix'
+    >>> decode_switch_line("timer:confirm") is None
+    True
+    """
+    if not data.startswith(_LINE_PREFIX):
+        return None
+    return data[len(_LINE_PREFIX) :]
+
+
+def switch_line_keyboard(lines: tuple[Line, ...]) -> InlineKeyboardMarkup:
+    """One button per line to re-attribute the pending sample to it."""
+    rows = [
+        [InlineKeyboardButton(line.label, callback_data=encode_switch_line(line.id))]
+        for line in lines
+    ]
+    return InlineKeyboardMarkup(rows)
+
+
+def confirm_prompt(seconds: int, line_label: str) -> str:
+    """Ask the user to confirm the measured wait, naming the line it is for.
+
+    >>> confirm_prompt(725, "Pix")
+    'Você esperou ~12 min na fila Pix. Confirmar o registro?'
+    """
+    elapsed = format_estimate(seconds)
+    where = f" na fila {line_label}" if line_label else ""
+    return f"Você esperou {elapsed}{where}. Confirmar o registro?"
 
 
 def confirmation(seconds: int) -> str:
@@ -180,7 +252,8 @@ class RegisterTimer:
         context.user_data["timer_start"] = self._clock()
         context.user_data["timer_line"] = line_id
         await update.effective_message.reply_text(
-            _STARTED, reply_markup=ReplyKeyboardRemove()
+            started_message(self._line_label(line_id)),
+            reply_markup=ReplyKeyboardRemove(),
         )
 
     async def stop(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -191,21 +264,69 @@ class RegisterTimer:
             return
         seconds = elapsed_seconds(start, self._clock())
         context.user_data["pending_seconds"] = seconds
+        line_id = context.user_data.get("timer_line")
         await update.effective_message.reply_text(
-            confirm_prompt(seconds), reply_markup=decision_keyboard()
+            confirm_prompt(seconds, self._line_label(line_id)),
+            reply_markup=decision_keyboard(),
         )
 
     async def on_decision(
         self, update: Update, context: ContextTypes.DEFAULT_TYPE
     ) -> None:
-        """Confirm records the pending wait; resume keeps the original timer."""
+        """Route the /parar choice: resume, switch line, or confirm the record."""
         query = update.callback_query
         await query.answer()
         if query.data == _RESUME:
-            context.user_data.pop("pending_seconds", None)
-            await query.edit_message_text(_RESUMED)
+            await self._resume(context, query)
+            return
+        if query.data == _SWITCH:
+            await self._offer_line_switch(context, query)
+            return
+        line_id = decode_switch_line(query.data)
+        if line_id is not None:
+            await self._switch_line(context, query, line_id)
             return
         await self._record_pending(update.effective_user.id, context, query)
+
+    async def _resume(self, context: ContextTypes.DEFAULT_TYPE, query: object) -> None:
+        """Drop the pending value but keep the original timer running."""
+        context.user_data.pop("pending_seconds", None)
+        label = self._line_label(context.user_data.get("timer_line"))
+        await query.edit_message_text(resumed_message(label))
+
+    async def _offer_line_switch(
+        self, context: ContextTypes.DEFAULT_TYPE, query: object
+    ) -> None:
+        """Show the line picker so the pending sample can be re-attributed."""
+        if context.user_data.get("pending_seconds") is None:
+            await query.edit_message_text(_NOTHING_PENDING)
+            return
+        await query.edit_message_text(
+            _SWITCH_PROMPT, reply_markup=switch_line_keyboard(self._lines)
+        )
+
+    async def _switch_line(
+        self, context: ContextTypes.DEFAULT_TYPE, query: object, line_id: str
+    ) -> None:
+        """Re-attribute the pending sample to ``line_id``, then re-ask to confirm.
+
+        Changes only this registration's ``timer_line``; the user's saved /fila
+        preference is a separate setting and is left untouched.
+        """
+        seconds = context.user_data.get("pending_seconds")
+        if seconds is None:
+            await query.edit_message_text(_NOTHING_PENDING)
+            return
+        line = find_line(self._lines, line_id)
+        if line is None:
+            await query.edit_message_text(
+                _SWITCH_GONE, reply_markup=switch_line_keyboard(self._lines)
+            )
+            return
+        context.user_data["timer_line"] = line.id
+        await query.edit_message_text(
+            confirm_prompt(seconds, line.label), reply_markup=decision_keyboard()
+        )
 
     async def _record_pending(
         self, user_id: int, context: ContextTypes.DEFAULT_TYPE, query: object
@@ -227,3 +348,11 @@ class RegisterTimer:
     def _clear_timer(self, context: ContextTypes.DEFAULT_TYPE) -> None:
         for key in ("timer_start", "timer_line", "pending_seconds"):
             context.user_data.pop(key, None)
+
+    def _line_label(self, line_id: object) -> str:
+        """The display label for a stored line id, or ``""`` if it isn't a
+        known line — the message builders fall back to a line-less phrasing."""
+        if not isinstance(line_id, str):
+            return ""
+        line = find_line(self._lines, line_id)
+        return line.label if line is not None else ""

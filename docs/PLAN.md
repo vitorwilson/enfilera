@@ -223,13 +223,16 @@ in the core.
 - [x] **"How's the line today?"** → show current estimate(s) per the user's
       line, or the closed message when shut.
 - [x] **"Register time"** timer: start (geofence-checked) → stop at turnstile,
-      with confirm/resume; submit only if within the physical clamp band,
-      within geofence, and not already submitted this period; otherwise the
-      action is rejected with a
+      with confirm / resume / switch-line; submit only if within the physical
+      clamp band, within geofence, and not already submitted this period;
+      otherwise the action is rejected with a
       clear reason. Confirm/resume guards a *premature* stop: a plausible-but-
       early value (10 min when it was 20) passes the clamp, so on /parar the
       bot shows the elapsed and lets the user resume the original timer instead
-      of submitting the wrong number.
+      of submitting the wrong number. The running line is named at start and on
+      /parar; **switch-line** re-attributes the pending measurement to a
+      different line before confirming (this registration only — the saved
+      /fila preference is untouched).
 - [x] **Geofence check** on start: request live location, compare to config
       center/radius, **discard the location immediately** after the check.
 - [x] **"Found a bug?"** → open/link a GitHub issue.

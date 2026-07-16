@@ -48,12 +48,16 @@ class FakeCallbackQuery:
         self.data = data
         self.answered = False
         self.edits: list[str] = []
+        # Parallel to edits: the reply_markup passed with each edit (or None),
+        # so a test can assert an edit re-rendered an inline keyboard.
+        self.edit_markups: list[object] = []
 
     async def answer(self) -> None:
         self.answered = True
 
-    async def edit_message_text(self, text: str) -> None:
+    async def edit_message_text(self, text: str, reply_markup: object = None) -> None:
         self.edits.append(text)
+        self.edit_markups.append(reply_markup)
 
 
 class FakeUser:
