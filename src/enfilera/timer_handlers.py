@@ -8,14 +8,17 @@ The flow that turns a student's queue wait into a sample:
    geofence the timer starts (queue-join instant); the coordinates are read
    for the radius test and then dropped — never stored (docs/PLAN.md §3).
 3. ``/parar`` measures the elapsed transit from two server timestamps and shows
-   it with a confirm / resume / switch-line choice. Confirm applies the physical
-   clamp and records the sample; resume keeps the *original* timer running;
-   switch re-attributes the pending measurement to a different line before
-   confirming (e.g. the user's default line was not the one they waited in
-   today). Resume guards a premature stop: a plausible-but-early value (10 min
-   when it was 20) passes the clamp, so the user must confirm it is the real
-   turnstile moment. The switch changes only *this* registration — it does not
-   touch the user's saved ``/fila`` preference.
+   it with a confirm / resume / switch-line / cancel choice. Confirm applies the
+   physical clamp and records the sample; resume keeps the *original* timer
+   running; switch re-attributes the pending measurement to a different line
+   before confirming (e.g. the user's default line was not the one they waited
+   in today); cancel discards the pending measurement and the timer, recording
+   nothing — and, unlike confirm, it never burns the one-per-period submission,
+   so the user can start over in the same period. Resume guards a premature
+   stop: a plausible-but-early value (10 min when it was 20) passes the clamp,
+   so the user must confirm it is the real turnstile moment. The switch changes
+   only *this* registration — it does not touch the user's saved ``/fila``
+   preference.
 
 Per-user flow state (start instant, line, pending elapsed) lives in
 ``context.user_data``; all gating is in injected services, so this handler
@@ -60,6 +63,7 @@ DECISION_PATTERN = r"^timer:"
 _CONFIRM = "timer:confirm"
 _RESUME = "timer:resume"
 _SWITCH = "timer:switch"
+_CANCEL = "timer:cancel"
 # A line-switch tap; the id rides after the prefix. Namespaced under "timer:"
 # so the same CallbackQueryHandler owns it and it never collides with /fila.
 _LINE_PREFIX = "timer:line:"
@@ -77,6 +81,10 @@ _NOTHING_PENDING = "Não há nada para confirmar."
 _TOO_LONG = "Tempo muito longo para ser real — não registrado."
 _SWITCH_PROMPT = "Para qual fila vale este tempo?"
 _SWITCH_GONE = "Essa fila não existe mais. Escolha outra:"
+_CANCELLED = (
+    "Registro cancelado — nada foi gravado. Use /registrar para começar de novo."
+)
+_NOTHING_TO_CANCEL = "Não há nada para cancelar."
 
 
 def started_message(line_label: str) -> str:
@@ -112,14 +120,17 @@ def location_request_keyboard() -> ReplyKeyboardMarkup:
 
 
 def decision_keyboard() -> InlineKeyboardMarkup:
-    """Confirm / resume / switch-line choice shown when the user stops."""
+    """Confirm / resume / switch-line / cancel choice shown when the user stops."""
     return InlineKeyboardMarkup(
         [
             [
                 InlineKeyboardButton("✅ Confirmar", callback_data=_CONFIRM),
                 InlineKeyboardButton("⏳ Ainda na fila", callback_data=_RESUME),
             ],
-            [InlineKeyboardButton("🔀 Trocar de fila", callback_data=_SWITCH)],
+            [
+                InlineKeyboardButton("🔀 Trocar de fila", callback_data=_SWITCH),
+                InlineKeyboardButton("❌ Cancelar", callback_data=_CANCEL),
+            ],
         ]
     )
 
@@ -186,7 +197,7 @@ def _rejection(verdict: ElapsedVerdict, clamp_min_seconds: int) -> str:
 
 
 class RegisterTimer:
-    """Wires /registrar, the location check, /parar, and confirm/resume."""
+    """Wires /registrar, the location check, /parar, and the stop decision."""
 
     def __init__(
         self,
@@ -207,7 +218,7 @@ class RegisterTimer:
         self._clock = clock
 
     def register(self, application: Application) -> None:
-        """Add the start, stop, location, and confirm/resume handlers."""
+        """Add the start, stop, location, and decision handlers."""
         application.add_handler(CommandHandler(START_COMMAND, self.start))
         application.add_handler(CommandHandler(STOP_COMMAND, self.stop))
         application.add_handler(MessageHandler(filters.LOCATION, self.on_location))
@@ -273,7 +284,7 @@ class RegisterTimer:
     async def on_decision(
         self, update: Update, context: ContextTypes.DEFAULT_TYPE
     ) -> None:
-        """Route the /parar choice: resume, switch line, or confirm the record."""
+        """Route the /parar choice: resume, switch line, cancel, or confirm."""
         query = update.callback_query
         await query.answer()
         if query.data == _RESUME:
@@ -281,6 +292,9 @@ class RegisterTimer:
             return
         if query.data == _SWITCH:
             await self._offer_line_switch(context, query)
+            return
+        if query.data == _CANCEL:
+            await self._cancel(context, query)
             return
         line_id = decode_switch_line(query.data)
         if line_id is not None:
@@ -327,6 +341,21 @@ class RegisterTimer:
         await query.edit_message_text(
             confirm_prompt(seconds, line.label), reply_markup=decision_keyboard()
         )
+
+    async def _cancel(self, context: ContextTypes.DEFAULT_TYPE, query: object) -> None:
+        """Discard the pending measurement and the timer, recording nothing.
+
+        Cancel never touches the recorder, so the one-per-period submission is
+        not burned: the user may /registrar again in the same period.
+        """
+        if (
+            context.user_data.get("timer_start") is None
+            and context.user_data.get("pending_seconds") is None
+        ):
+            await query.edit_message_text(_NOTHING_TO_CANCEL)
+            return
+        self._clear_timer(context)
+        await query.edit_message_text(_CANCELLED)
 
     async def _record_pending(
         self, user_id: int, context: ContextTypes.DEFAULT_TYPE, query: object

@@ -7,6 +7,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
+- On `/parar`, a **"Cancelar"** option discards the pending measurement and the
+  running timer without recording anything — and without burning the
+  one-per-period submission, so the user can start over with `/registrar` in
+  the same period. Until now the only choices were confirm, resume, and
+  switch-line, so an abandoned wait still had to be submitted or left running.
 - On `/parar`, a **"Trocar de fila"** option lets a user re-attribute the
   measured wait to a different line before confirming — useful when their
   default `/fila` line was not the one they actually waited in today. It

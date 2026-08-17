@@ -299,6 +299,51 @@ def test_stop_without_active_timer(memory_db: sqlite3.Connection) -> None:
     assert "não tem um cronômetro" in _last_reply(stop)
 
 
+# --- cancelar o registro ----------------------------------------------------
+
+
+def test_cancel_discards_pending_and_timer_without_recording(
+    memory_db: sqlite3.Connection,
+) -> None:
+    clock = Clock(START)
+    timer, context = _started(memory_db, clock)
+    clock.now = START + timedelta(minutes=12)
+    _run(timer.stop(_cmd(), context))
+    cancel = _decision("timer:cancel")
+    _run(timer.on_decision(cancel, context))
+    assert "cancelado" in cancel.callback_query.edits[-1]
+    assert _samples(memory_db) == []
+    for key in ("timer_start", "timer_line", "pending_seconds"):
+        assert key not in context.user_data
+
+
+def test_cancel_does_not_burn_the_period(memory_db: sqlite3.Connection) -> None:
+    # Cancel is not a submission: the user must be able to start over and
+    # record for real later in the same period.
+    clock = Clock(START)
+    timer, context = _started(memory_db, clock)
+    clock.now = START + timedelta(minutes=12)
+    _run(timer.stop(_cmd(), context))
+    _run(timer.on_decision(_decision("timer:cancel"), context))
+    submissions = SubmissionStore(memory_db)
+    assert not submissions.has_submitted(USER, date(2026, 6, 30), "lunch")
+    clock.now = START + timedelta(minutes=30)
+    _run(timer.start(_cmd(), context))
+    _run(timer.on_location(_location(*CENTER), context))
+    clock.now = START + timedelta(minutes=45)
+    _run(timer.stop(_cmd(), context))
+    _run(timer.on_decision(_decision("timer:confirm"), context))
+    assert _samples(memory_db) == [900]  # 15 min, measured from the restart
+
+
+def test_cancel_without_pending_shows_nothing_to_cancel(
+    memory_db: sqlite3.Connection,
+) -> None:
+    cancel = _decision("timer:cancel")
+    _run(_timer(memory_db, Clock(START)).on_decision(cancel, FakeContext()))
+    assert "nada para cancelar" in cancel.callback_query.edits[-1]
+
+
 # --- line naming + trocar de fila -----------------------------------------
 
 
@@ -392,7 +437,7 @@ def test_switch_does_not_change_saved_line_preference(
     assert LinePreferenceStore(memory_db).get_line(USER) == "card"
 
 
-def test_decision_keyboard_offers_confirm_resume_and_switch(
+def test_decision_keyboard_offers_confirm_resume_switch_and_cancel(
     memory_db: sqlite3.Connection,
 ) -> None:
     clock = Clock(START)
@@ -401,7 +446,12 @@ def test_decision_keyboard_offers_confirm_resume_and_switch(
     stop = _cmd()
     _run(timer.stop(stop, context))
     markup = stop.effective_message.replies[-1][1]
-    assert _callback_data(markup) == ["timer:confirm", "timer:resume", "timer:switch"]
+    assert _callback_data(markup) == [
+        "timer:confirm",
+        "timer:resume",
+        "timer:switch",
+        "timer:cancel",
+    ]
 
 
 def test_register_adds_start_stop_location_and_decision_handlers(
